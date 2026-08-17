@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GemID — Gemstone Identification Tool for Gemologists</title>
+    <meta name="description" content="Professional gemstone identification tool. Filter gems by refractive index, birefringence, specific gravity, and optical character to identify colored stones.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Ambient background effects -->
+    <div class="ambient-bg">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+    </div>
+
+    <header id="app-header">
+        <div class="header-inner">
+            <div class="logo-group">
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M16 2L28 10L24 28H8L4 10L16 2Z" stroke="url(#logo-grad)" stroke-width="2" fill="none"/>
+                        <path d="M16 2L4 10H28L16 2Z" fill="url(#logo-grad)" opacity="0.3"/>
+                        <path d="M4 10L8 28H24L28 10" stroke="url(#logo-grad)" stroke-width="1.5" opacity="0.5"/>
+                        <path d="M16 2L8 28M16 2L24 28M4 10L24 28M28 10L8 28" stroke="url(#logo-grad)" stroke-width="0.75" opacity="0.3"/>
+                        <defs>
+                            <linearGradient id="logo-grad" x1="4" y1="2" x2="28" y2="28">
+                                <stop offset="0%" stop-color="#a78bfa"/>
+                                <stop offset="50%" stop-color="#818cf8"/>
+                                <stop offset="100%" stop-color="#6366f1"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="logo-text">GemID</h1>
+                    <p class="logo-subtitle">Colored Stone Identification</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-reset" class="btn-ghost" title="Reset all filters">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2v5h5M14 14V9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.49 6A6 6 0 0 0 3.64 3.64L2 5m12 6l-1.64 1.36A6 6 0 0 1 2.51 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Reset
+                </button>
+                <span class="match-badge" id="match-count">0 matches</span>
+            </div>
+        </div>
+    </header>
+
+    <main id="app-main">
+        <!-- Filter Panel -->
+        <aside id="filter-panel" class="glass-panel">
+            <div class="panel-header">
+                <h2>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M1.5 3h15M4.5 8.25h9M7.5 13.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    Filters
+                </h2>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">
+                    <span class="label-text">Refractive Index</span>
+                    <span class="label-range" id="ri-range-label">1.400 – 3.000</span>
+                </label>
+                <div class="dual-range-container" id="ri-slider">
+                    <div class="range-track">
+                        <div class="range-fill" id="ri-fill"></div>
+                    </div>
+                    <input type="range" class="range-input range-min" id="ri-min" min="1.400" max="3.000" step="0.001" value="1.400">
+                    <input type="range" class="range-input range-max" id="ri-max" min="1.400" max="3.000" step="0.001" value="3.000">
+                </div>
+                <div class="range-inputs-row">
+                    <input type="number" class="num-input" id="ri-min-input" min="1.400" max="3.000" step="0.001" value="1.400" aria-label="Min RI">
+                    <span class="range-separator">–</span>
+                    <input type="number" class="num-input" id="ri-max-input" min="1.400" max="3.000" step="0.001" value="3.000" aria-label="Max RI">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">
+                    <span class="label-text">Birefringence</span>
+                    <span class="label-range" id="biref-range-label">0.000 – 0.300</span>
+                </label>
+                <div class="dual-range-container" id="biref-slider">
+                    <div class="range-track">
+                        <div class="range-fill" id="biref-fill"></div>
+                    </div>
+                    <input type="range" class="range-input range-min" id="biref-min" min="0.000" max="0.300" step="0.001" value="0.000">
+                    <input type="range" class="range-input range-max" id="biref-max" min="0.000" max="0.300" step="0.001" value="0.300">
+                </div>
+                <div class="range-inputs-row">
+                    <input type="number" class="num-input" id="biref-min-input" min="0.000" max="0.300" step="0.001" value="0.000" aria-label="Min Birefringence">
+                    <span class="range-separator">–</span>
+                    <input type="number" class="num-input" id="biref-max-input" min="0.000" max="0.300" step="0.001" value="0.300" aria-label="Max Birefringence">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">
+                    <span class="label-text">Specific Gravity</span>
+                    <span class="label-range" id="sg-range-label">1.00 – 7.50</span>
+                </label>
+                <div class="dual-range-container" id="sg-slider">
+                    <div class="range-track">
+                        <div class="range-fill" id="sg-fill"></div>
+                    </div>
+                    <input type="range" class="range-input range-min" id="sg-min" min="1.00" max="7.50" step="0.01" value="1.00">
+                    <input type="range" class="range-input range-max" id="sg-max" min="1.00" max="7.50" step="0.01" value="7.50">
+                </div>
+                <div class="range-inputs-row">
+                    <input type="number" class="num-input" id="sg-min-input" min="1.00" max="7.50" step="0.01" value="1.00" aria-label="Min SG">
+                    <span class="range-separator">–</span>
+                    <input type="number" class="num-input" id="sg-max-input" min="1.00" max="7.50" step="0.01" value="7.50" aria-label="Max SG">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">
+                    <span class="label-text">Optical Character</span>
+                </label>
+                <div class="chip-group" id="optic-chips">
+                    <button class="chip active" data-value="all">All</button>
+                    <button class="chip" data-value="SR">SR</button>
+                    <button class="chip" data-value="DR">DR</button>
+                    <button class="chip" data-value="AGG">AGG</button>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">
+                    <span class="label-text">Hardness (Mohs)</span>
+                    <span class="label-range" id="hardness-range-label">1.0 – 10.0</span>
+                </label>
+                <div class="dual-range-container" id="hardness-slider">
+                    <div class="range-track">
+                        <div class="range-fill" id="hardness-fill"></div>
+                    </div>
+                    <input type="range" class="range-input range-min" id="hardness-min" min="1.0" max="10.0" step="0.5" value="1.0">
+                    <input type="range" class="range-input range-max" id="hardness-max" min="1.0" max="10.0" step="0.5" value="10.0">
+                </div>
+                <div class="range-inputs-row">
+                    <input type="number" class="num-input" id="hardness-min-input" min="1.0" max="10.0" step="0.5" value="1.0" aria-label="Min Hardness">
+                    <span class="range-separator">–</span>
+                    <input type="number" class="num-input" id="hardness-max-input" min="1.0" max="10.0" step="0.5" value="10.0" aria-label="Max Hardness">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">
+                    <span class="label-text">Search by Name</span>
+                </label>
+                <div class="search-wrapper">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <input type="text" id="search-name" class="search-input" placeholder="e.g. Sapphire, Tourmaline…" autocomplete="off">
+                </div>
+            </div>
+        </aside>
+
+        <!-- Results Area -->
+        <section id="results-area">
+            <div id="results-grid" class="results-grid">
+                <!-- Gem cards injected here -->
+            </div>
+            <div id="empty-state" class="empty-state" style="display:none;">
+                <div class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                        <path d="M32 8L52 20L46 52H18L12 20L32 8Z" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                        <path d="M22 32h20M32 22v20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.2"/>
+                    </svg>
+                </div>
+                <h3>No gems match your filters</h3>
+                <p>Try widening your search criteria</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Gem Detail Modal -->
+    <div id="gem-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content glass-panel">
+            <button id="modal-close" class="modal-close" aria-label="Close detail panel">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div id="modal-body">
+                <!-- Injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="gems-data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
