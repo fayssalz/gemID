@@ -42,6 +42,10 @@
                 </div>
             </div>
             <div class="header-actions">
+                <a href="gemospect/index.html" class="btn-ghost btn-tiny" title="Open Gemospect Spectroscopy Tool">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h20L12 2z"/><path d="M12 2v20"/></svg>
+                    advanspecto
+                </a>
                 <button id="btn-reset" class="btn-ghost" title="Reset all filters">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2v5h5M14 14V9H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.49 6A6 6 0 0 0 3.64 3.64L2 5m12 6l-1.64 1.36A6 6 0 0 1 2.51 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Reset
@@ -158,7 +162,98 @@
                     <input type="text" id="search-name" class="search-input" placeholder="e.g. Sapphire, Tourmaline…" autocomplete="off">
                 </div>
             </div>
+
+            <!-- SPECTROSCOPY FILTER -->
+            <div class="filter-section" id="spectro-filter-section">
+                <!-- Collapsible Header -->
+                <div class="spectro-section-header" id="spectro-toggle" role="button" tabindex="0" aria-expanded="false" title="Toggle spectroscopy filter">
+                    <label class="filter-label" style="margin:0;cursor:pointer;">
+                        <span class="label-text">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+                                <path d="M2 8h2m8 0h2M4.93 4.93l1.41 1.41m3.31 3.31l1.41 1.41M8 2v2m0 8v2M4.93 11.07l1.41-1.41M9.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                            Spectroscopy
+                            <span class="spectro-badge" id="spectro-badge">0 bands</span>
+                        </span>
+                    </label>
+                    <svg class="spectro-chevron" id="spectro-chevron" viewBox="0 0 14 14" fill="none">
+                        <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <!-- Collapsible Body -->
+                <div class="spectro-filter-body" id="spectro-filter-body">
+
+                    <!-- NM Labels -->
+                    <div class="spectrum-nm-labels">
+                        <span>700</span><span>650</span><span>600</span><span>550</span><span>500</span><span>450</span><span>400 nm</span>
+                    </div>
+
+                    <!-- Interactive Spectrum Bar -->
+                    <div class="spectrum-bar-interactive" id="spectro-bar" title="Click to add absorption wavelength">
+                        <div class="preview-line" id="spectro-preview-line"></div>
+                        <!-- Markers injected here by JS -->
+                    </div>
+
+                    <!-- Controls Row -->
+                    <div class="spectro-controls-row">
+                        <input type="number" class="spectro-nm-input" id="spectro-nm-input"
+                            min="400" max="700" step="1" value="504" aria-label="Wavelength in nm">
+                        <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;">nm</span>
+                        <button class="spectro-add-btn" id="spectro-add-btn">+ Add</button>
+                        <select class="spectro-tolerance-select" id="spectro-tolerance" aria-label="Tolerance">
+                            <option value="3">±3 nm</option>
+                            <option value="8" selected>±8 nm</option>
+                            <option value="15">±15 nm</option>
+                            <option value="25">±25 nm</option>
+                        </select>
+                    </div>
+
+                    <!-- Active Bands + Clear -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+                        <span style="font-size:10px;color:var(--text-muted);">Active bands:</span>
+                        <button class="spectro-clear-btn" id="spectro-clear-btn">Clear all</button>
+                    </div>
+                    <div class="spectro-active-bands" id="spectro-active-bands">
+                        <!-- Chips injected here -->
+                    </div>
+
+                    <!-- Match Mode Toggle -->
+                    <div class="spectro-match-row">
+                        <span class="spectro-match-label">Match logic:</span>
+                        <div class="spectro-match-toggle">
+                            <button class="spectro-match-btn active" id="spectro-match-all" data-mode="all">ALL</button>
+                            <button class="spectro-match-btn" id="spectro-match-any" data-mode="any">ANY</button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Presets -->
+                    <div class="spectro-presets">
+                        <button class="spectro-preset-btn" data-lines="504,520,573" data-mode="all">
+                            <span>Almandine</span><span class="preset-nm">504,520,573</span>
+                        </button>
+                        <button class="spectro-preset-btn" data-lines="693.5,659" data-mode="all">
+                            <span>Ruby</span><span class="preset-nm">693.5,659</span>
+                        </button>
+                        <button class="spectro-preset-btn" data-lines="683,680,637" data-mode="all">
+                            <span>Emerald</span><span class="preset-nm">683,680,637</span>
+                        </button>
+                        <button class="spectro-preset-btn" data-lines="458,478,500" data-mode="all">
+                            <span>Blue Spinel</span><span class="preset-nm">458,478,500</span>
+                        </button>
+                        <button class="spectro-preset-btn" data-lines="450,460,471" data-mode="all">
+                            <span>Blue Sapphire</span><span class="preset-nm">450,460,471</span>
+                        </button>
+                        <button class="spectro-preset-btn" data-lines="493,473,453" data-mode="all">
+                            <span>Peridot</span><span class="preset-nm">493,473,453</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
         </aside>
+
 
         <!-- Results Area -->
         <section id="results-area">

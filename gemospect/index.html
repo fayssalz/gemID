@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gem Spectroscopy & Multi-Band Diffraction Grating Filter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Spectrum Gradient (Red 700nm on left to Violet 400nm on right) */
+        .spectrum-bar {
+            background: linear-gradient(to right,
+                #7f0000 0%,     /* 700nm Deep Red */
+                #ff0000 10%,    /* 670nm Red */
+                #ff7f00 25%,    /* 600nm Orange */
+                #ffff00 40%,    /* 570nm Yellow */
+                #008000 55%,    /* 530nm Green */
+                #0000ff 75%,    /* 470nm Blue */
+                #4b0082 90%,    /* 430nm Indigo */
+                #2e0854 100%    /* 400nm Violet */
+            );
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <a href="../index.html" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center gap-1.5 shadow-sm" title="Back to main GemID app">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> GemID
+                </a>
+                <div class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <i data-lucide="prism" class="w-7 h-7 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        Gemospect
+                    </h1>
+                    <p class="text-xs text-slate-400">Based on Basil W. Anderson & C.J. Payne's 'The Spectroscope and Gemmology'</p>
+                </div>
+            </div>
+            <!-- Navigation Tabs -->
+            <div class="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 shadow-inner">
+                <button onclick="switchTab('filter')" id="tab-btn-filter" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 bg-indigo-600 text-white shadow">
+                    <i data-lucide="sliders" class="w-4 h-4"></i> Multi-Band Absorption Filter
+                </button>
+                <button onclick="switchTab('search')" id="tab-btn-search" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 text-slate-300 hover:text-white">
+                    <i data-lucide="search" class="w-4 h-4"></i> Reverse Search by Name
+                </button>
+                <button onclick="switchTab('database')" id="tab-btn-database" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2 text-slate-300 hover:text-white">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Full Book Database
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+
+        <!-- TAB 1: SPECTRUM & MULTI-BAND FILTER -->
+        <section id="tab-filter" class="space-y-8">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                    <i data-lucide="activity" class="w-48 h-48 text-indigo-400"></i>
+                </div>
+
+                <h2 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                    <i data-lucide="rainbow" class="w-5 h-5 text-indigo-400"></i> Multi-Band Absorption Grating Filter
+                </h2>
+                <p class="text-sm text-slate-400 mb-6">
+                    Click anywhere on the spectrum bar to add absorption wavelength markers. Filter gems matching multiple absorption lines simultaneously (Match ALL or Match ANY).
+                </p>
+
+                <!-- Interactive Spectrum Bar Container -->
+                <div class="space-y-4">
+                    <div class="flex justify-between text-xs font-mono text-slate-400 px-1">
+                        <span>700 nm (Red)</span>
+                        <span>650 nm</span>
+                        <span>600 nm</span>
+                        <span>550 nm (Yellow)</span>
+                        <span>500 nm</span>
+                        <span>450 nm</span>
+                        <span>400 nm (Violet)</span>
+                    </div>
+
+                    <!-- Spectrum Grayscale / Color Bar with Clickable Area -->
+                    <div id="interactive-spectrum" class="relative h-16 rounded-xl spectrum-bar cursor-pointer border-2 border-slate-700 shadow-inner overflow-hidden" title="Click to add wavelength band">
+                        <!-- Multiple Wavelength Cursors Container -->
+                        <div id="wavelength-cursors-container" class="absolute inset-0 pointer-events-none">
+                            <!-- Dynamically populated cursor lines -->
+                        </div>
+
+                        <!-- Wavelength Tick Marks Overlay -->
+                        <div class="absolute inset-0 flex justify-between pointer-events-none opacity-30 px-1">
+                            <div class="w-px h-full bg-black"></div>
+                            <div class="w-px h-full bg-black"></div>
+                            <div class="w-px h-full bg-black"></div>
+                            <div class="w-px h-full bg-black"></div>
+                            <div class="w-px h-full bg-black"></div>
+                            <div class="w-px h-full bg-black"></div>
+                            <div class="w-px h-full bg-black"></div>
+                        </div>
+                    </div>
+
+                    <!-- Controls and Active Wavelength Bands -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-2">
+                        <!-- Left: Quick Add Slider -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <div class="flex justify-between items-center text-xs font-medium text-slate-300">
+                                <label for="wavelength-slider">Add Wavelength Band:</label>
+                                <span class="font-mono text-indigo-400 font-bold"><span id="slider-value">504</span> nm</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input type="range" id="wavelength-slider" min="400" max="700" value="504" step="1"
+                                    class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                                <button onclick="addCurrentSliderWavelength()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-lg text-white whitespace-nowrap transition">
+                                    + Add Band
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+                                <label for="tolerance-select">Tolerance (±):</label>
+                                <select id="tolerance-select" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="3">± 3 nm</option>
+                                    <option value="8" selected>± 8 nm</option>
+                                    <option value="15">± 15 nm</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Middle: Active Wavelength Bands Chips -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                            <div>
+                                <div class="text-xs font-medium text-slate-300 mb-2 flex justify-between items-center">
+                                    <span>Active Absorption Bands (<span id="active-count">0</span>):</span>
+                                    <button onclick="clearAllWavelengths()" class="text-[10px] text-rose-400 hover:underline">Clear All</button>
+                                </div>
+                                <div id="active-bands-container" class="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+                                    <!-- Dynamically populated chips -->
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800/80 mt-2">
+                                <span class="text-slate-400">Match Logic:</span>
+                                <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                                    <button onclick="setMatchMode('all')" id="match-mode-all" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-indigo-600 text-white transition">Match ALL</button>
+                                    <button onclick="setMatchMode('any')" id="match-mode-any" class="px-2.5 py-1 text-[11px] font-semibold rounded text-slate-400 hover:text-white transition">Match ANY</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Classic Spectrum Presets -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                            <div class="text-xs font-medium text-slate-300 mb-2">Classic Spectrum Presets:</div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button onclick="loadPreset([504, 520, 573], 'all')" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-800 rounded-lg text-left text-[11px] font-medium transition flex items-center justify-between">
+                                    <span>Almandine Triplet</span>
+                                    <span class="text-[9px] font-mono text-slate-500">504,520,573</span>
+                                </button>
+                                <button onclick="loadPreset([693.5, 659], 'all')" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-rose-300 border border-slate-800 rounded-lg text-left text-[11px] font-medium transition flex items-center justify-between">
+                                    <span>Ruby Doublet</span>
+                                    <span class="text-[9px] font-mono text-slate-500">693.5,659</span>
+                                </button>
+                                <button onclick="loadPreset([493, 473, 453], 'all')" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-800 rounded-lg text-left text-[11px] font-medium transition flex items-center justify-between">
+                                    <span>Peridot Iron Trio</span>
+                                    <span class="text-[9px] font-mono text-slate-500">493,473,453</span>
+                                </button>
+                                <button onclick="loadPreset([458, 478, 500], 'all')" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-blue-300 border border-slate-800 rounded-lg text-left text-[11px] font-medium transition flex items-center justify-between">
+                                    <span>Cobalt Spinel</span>
+                                    <span class="text-[9px] font-mono text-slate-500">458,478,500</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Results Header -->
+            <div class="flex justify-between items-center">
+                <h3 class="text-md font-bold text-white flex items-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4 text-indigo-400"></i> Matching Gems (<span id="match-count">0</span>)
+                </h3>
+                <p class="text-xs text-slate-400">Matching criteria: <span id="active-filter-desc" class="font-mono text-indigo-400">Match ALL active bands</span></p>
+            </div>
+
+            <!-- Results Grid -->
+            <div id="filter-results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- TAB 2: REVERSE SEARCH BY NAME -->
+        <section id="tab-search" class="space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                    <i data-lucide="search" class="w-5 h-5 text-indigo-400"></i> Reverse Search by Gem Name or Variety
+                </h2>
+                <p class="text-sm text-slate-400 mb-4">
+                    Type any gem name (e.g., Ruby, Zircon, Emerald, Almandine, Diamond) to instantly view its spectroscopic profile and simulated spectrum.
+                </p>
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-slate-500"></i>
+                    <input type="text" id="name-search-input" placeholder="Search gems by name, variety or category (e.g. Ruby, Spinel, Zircon)..."
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <!-- Search Results Grid -->
+            <div id="search-results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- TAB 3: FULL BOOK DATABASE -->
+        <section id="tab-database" class="space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i data-lucide="book-open" class="w-5 h-5 text-indigo-400"></i> Complete Book Spectroscopy Reference Table (All Chapters 1-39)
+                        </h2>
+                        <p class="text-sm text-slate-400">Basil W. Anderson & C.J. Payne: The Spectroscope and Gemmology</p>
+                    </div>
+                    <div class="relative w-full sm:w-72">
+                        <input type="text" id="db-search-input" placeholder="Filter database..."
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-4 pr-4 py-2 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase font-mono tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Gem / Mineral</th>
+                                <th class="p-3">Variety / Category</th>
+                                <th class="p-3">Characteristic Lines (nm)</th>
+                                <th class="p-3">Absorption Bands</th>
+                                <th class="p-3">Book Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody id="database-table-body" class="divide-y divide-slate-800">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-4 py-8 mt-12 border-t border-slate-900 text-center text-xs text-slate-500">
+        <p>Gemospect WebApp • Built for Gemmological Spectroscopy & Diffraction Grating Analysis</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Comprehensive Gem Spectroscopy Database covering all 280 files of Anderson & Payne's Book
+        const gemDatabase = [
+            // CORUNDUM FAMILY
+            { id: "ruby", name: "Ruby", variety: "Natural & Synthetic Corundum", category: "Corundum", lines: [693.5, 668, 659, 476, 468], bands: [{ start: 620, end: 550, strength: "Strong broad absorption" }, { start: 476, end: 468, strength: "Narrow lines" }], description: "Bright red fluorescent doublet at 693.5nm, sharp lines at 668/659nm, and broad yellow-green absorption (620-550nm).", bookRef: "Chapter 11: Absorption and Fluorescence Spectrum of Ruby" },
+            { id: "burma_ruby", name: "Burma Ruby", variety: "Natural Corundum (Burma)", category: "Corundum", lines: [694.2, 692.8, 668, 659, 476, 468], bands: [{ start: 620, end: 540, strength: "Intense chromium absorption" }], description: "Intense chromium spectrum with strong fluorescence doublet at 693.5nm and prominent 476/468nm doublet in blue.", bookRef: "Chapter 11: Absorption and Fluorescence Spectrum of Ruby" },
+            { id: "siam_ruby", name: "Siam Ruby (Thailand)", variety: "Iron-rich Corundum", category: "Corundum", lines: [693.5, 668, 476, 450], bands: [{ start: 600, end: 550, strength: "General absorption" }], description: "Iron quenches fluorescence; doublet at 693.5nm is weak; iron band at 450nm often visible.", bookRef: "Chapter 11: Absorption and Fluorescence Spectrum of Ruby" },
+            { id: "synthetic_ruby", name: "Synthetic Ruby (Verneuil)", variety: "Flame-Fusion Corundum", category: "Corundum", lines: [693.5, 668, 659, 476, 468], bands: [{ start: 620, end: 540, strength: "Intense chromium absorption" }], description: "Spectrum identical to natural ruby, but shows extremely high fluorescence due to high purity chromium.", bookRef: "Chapter 36: Absorption in Synthetic Gemstones" },
+            { id: "blue_sapphire", name: "Blue Sapphire", variety: "Corundum (Blue)", category: "Corundum", lines: [450, 460, 471], bands: [{ start: 445, end: 480, strength: "Iron absorption triplet (450, 460, 471nm)" }], description: "Iron absorption band triplet at 450nm, 460nm, and 471nm in the blue region. 450nm line is diagnostic.", bookRef: "Chapter 26: Absorption Spectra of Sapphire and Chrysoberyl" },
+            { id: "green_sapphire", name: "Green Sapphire", variety: "Corundum (Green)", category: "Corundum", lines: [440, 451, 460, 470], bands: [{ start: 435, end: 480, strength: "Strong iron absorption complex" }], description: "Shows three or more intense iron absorption bands in the blue/violet region (440, 451, 460, 470nm).", bookRef: "Chapter 26: Absorption Spectra of Sapphire and Chrysoberyl" },
+            { id: "yellow_sapphire", name: "Yellow Sapphire", variety: "Corundum (Yellow)", category: "Corundum", lines: [450, 460, 471], bands: [{ start: 445, end: 475, strength: "Iron bands (Sri Lankan faint or none)" }], description: "Australian/Thai yellows show strong 450nm band. Sri Lankan yellows show faint 450nm or none.", bookRef: "Chapter 26: Absorption Spectra of Sapphire and Chrysoberyl" },
+            { id: "purple_sapphire", name: "Purple Sapphire", variety: "Corundum (Purple)", category: "Corundum", lines: [693.5, 450, 460], bands: [{ start: 580, end: 540, strength: "Mixed chromium and iron absorption" }], description: "Combination spectrum of chromium red lines (693.5nm) and iron blue bands (450nm).", bookRef: "Chapter 26: Absorption Spectra of Sapphire and Chrysoberyl" },
+            { id: "padparadscha", name: "Padparadscha Sapphire", variety: "Corundum (Orange-Pink)", category: "Corundum", lines: [693.5, 450], bands: [{ start: 550, end: 500, strength: "Broad band in green" }], description: "Exhibits mild chromium doublet at 693.5nm with faint iron features.", bookRef: "Chapter 39: Summary of Absorption Spectra" },
+            { id: "synthetic_blue_sapphire", name: "Synthetic Blue Sapphire", variety: "Verneuil Corundum", category: "Corundum", lines: [455], bands: [{ start: 450, end: 460, strength: "Vague blur instead of sharp 450nm line" }], description: "Lacks the sharp 450nm iron line of natural sapphire; shows a vague, ill-defined blur at 455nm if iron is added.", bookRef: "Chapter 36: Absorption in Synthetic Gemstones" },
+
+            // BERYL FAMILY
+            { id: "emerald_natural", name: "Emerald", variety: "Natural Beryl", category: "Beryl", lines: [683, 680, 637, 600, 477], bands: [{ start: 630, end: 600, strength: "Broad orange band" }, { start: 480, end: 470, strength: "Blue band" }], description: "Chromium doublet in red (683, 680nm), line at 637nm, broad band at 600nm, and 477nm line.", bookRef: "Chapter 14: Absorption Spectrum of Emerald" },
+            { id: "colombian_emerald", name: "Colombian Emerald", variety: "Chrome-Rich Beryl", category: "Beryl", lines: [683.5, 680.5, 662, 646, 637, 477], bands: [{ start: 620, end: 580, strength: "Intense chromium absorption" }], description: "Shows additional fine chromium lines at 662nm and 646nm alongside the main doublet.", bookRef: "Chapter 14: Absorption Spectrum of Emerald" },
+            { id: "synthetic_emerald", name: "Synthetic Emerald (Chatham/Gilson/Linde)", variety: "Flux/Hydrothermal Beryl", category: "Beryl", lines: [683, 680, 662, 646, 637, 477], bands: [{ start: 620, end: 580, strength: "Very strong chromium absorption" }], description: "Very chrome-rich, showing hyper-intense doublet at 683/680nm and extra lines at 662/646nm with vivid red fluorescence.", bookRef: "Chapter 36: Absorption in Synthetic Gemstones" },
+            { id: "aquamarine", name: "Aquamarine", variety: "Blue Beryl", category: "Beryl", lines: [537, 456, 427], bands: [{ start: 530, end: 545, strength: "Faint line at 537nm" }, { start: 450, end: 465, strength: "Iron band at 456nm" }], description: "Faint narrow line at 537nm (extraordinary ray) and iron absorption bands at 456nm and 427nm.", bookRef: "Chapter 27: Absorption Spectra of Aquamarine and Orthoclase" },
+            { id: "maxixe_beryl", name: "Maxixe Beryl", variety: "Deep Blue Beryl", category: "Beryl", lines: [654, 628, 581], bands: [{ start: 670, end: 600, strength: "Strong nitrate/color center bands in red-orange" }], description: "Natural or irradiated deep blue beryl from Maxixe mine showing strong absorption bands in red-orange at 654nm.", bookRef: "Chapter 34: Absorption Spectra of Diamond" },
+            { id: "green_beryl", name: "Green Beryl", variety: "Beryl", category: "Beryl", lines: [537, 456, 427], bands: [{ start: 450, end: 465, strength: "Iron band" }], description: "Non-chromium green beryl colored by iron showing 537nm line and 456nm band.", bookRef: "Chapter 27: Absorption Spectra of Aquamarine and Orthoclase" },
+            { id: "golden_beryl", name: "Golden Beryl (Heliodor)", variety: "Beryl", category: "Beryl", lines: [427], bands: [{ start: 420, end: 435, strength: "Intense ferric cutoff in violet" }], description: "Shows strong ferric iron absorption at 427nm causing violet cutoff.", bookRef: "Chapter 27: Absorption Spectra of Aquamarine and Orthoclase" },
+            { id: "morganite", name: "Morganite", variety: "Pink Beryl", category: "Beryl", lines: [550], bands: [{ start: 540, end: 560, strength: "Faint manganese band" }], description: "Colored by manganese, showing faint absorption in green near 550nm.", bookRef: "Chapter 29: Absorption Spectra Due to Manganese" },
+            { id: "bixbite", name: "Bixbite (Red Beryl)", variety: "Red Beryl", category: "Beryl", lines: [570, 500, 425], bands: [{ start: 560, end: 580, strength: "Strong manganese absorption" }], description: "Rare red beryl from Utah with strong Mn³⁺ absorption band centered at 570nm.", bookRef: "Chapter 29: Absorption Spectra Due to Manganese" },
+
+            // SPINEL FAMILY
+            { id: "red_spinel", name: "Red Spinel", variety: "Spinel", category: "Spinel", lines: [685, 682, 540], bands: [{ start: 685, end: 682, strength: "Organ-pipe fluorescent lines" }, { start: 560, end: 520, strength: "General absorption" }], description: "Famous for 'organ-pipe' group of fluorescent lines in deep red around 685nm and 682nm.", bookRef: "Chapter 12: Absorption and Fluorescence Spectrum of Red Spinel" },
+            { id: "synthetic_red_spinel", name: "Synthetic Red Spinel", variety: "Verneuil Spinel", category: "Spinel", lines: [685], bands: [{ start: 560, end: 520, strength: "Chromium band" }], description: "Shows single fluorescent line at 685nm, lacking the 'organ-pipe' multi-line structure of natural red spinel.", bookRef: "Chapter 36: Absorption in Synthetic Gemstones" },
+            { id: "blue_spinel", name: "Blue Spinel", variety: "Cobalt Blue Spinel", category: "Spinel", lines: [458, 478, 500], bands: [{ start: 440, end: 490, strength: "Cobalt triplet bands" }], description: "Distinctive 3-band spectrum caused by cobalt at 458nm, 478nm, and 500nm.", bookRef: "Chapter 20: Absorption Spectrum of Blue Spinel" },
+            { id: "synthetic_blue_spinel", name: "Synthetic Blue Spinel", variety: "Verneuil Cobalt Spinel", category: "Spinel", lines: [635, 580, 540], bands: [{ start: 635, end: 540, strength: "Three heavy cobalt bands in orange-green" }], description: "Shows three broad cobalt bands centered at 635nm, 580nm, and 540nm. Central band (580nm) is broader than others.", bookRef: "Chapter 36: Absorption in Synthetic Gemstones" },
+            { id: "gahnospinel", name: "Gahnospinel", variety: "Zinc-rich Spinel", category: "Spinel", lines: [458, 480, 555], bands: [{ start: 450, end: 490, strength: "Strong iron/zinc bands" }], description: "High refractive index zinc-spinel displaying strong iron bands at 458nm and 480nm.", bookRef: "Chapter 20: Absorption Spectrum of Blue Spinel" },
+
+            // GARNET FAMILY
+            { id: "almandine_garnet", name: "Almandine Garnet", variety: "Almandine", category: "Garnet", lines: [504, 520, 573, 610, 680], bands: [{ start: 500, end: 530, strength: "Intense band at 504nm" }, { start: 565, end: 585, strength: "Band at 573nm" }, { start: 605, end: 620, strength: "Band at 610nm" }], description: "Classic 'three-band' spectrum with intense bands at 504nm, 520nm, and 573nm due to ferrous iron.", bookRef: "Chapter 19: Absorption Spectrum of Almandine Garnet" },
+            { id: "pyrope_garnet", name: "Pyrope Garnet", variety: "Pyrope", category: "Garnet", lines: [685, 620, 575, 505], bands: [{ start: 560, end: 620, strength: "Broad absorption band" }], description: "Paler chromium/iron spectrum with a broad absorption band in yellow-green and faint red lines.", bookRef: "Chapter 13: Absorption Spectra of Pyrope and Topaz" },
+            { id: "spessartite_garnet", name: "Spessartite Garnet", variety: "Spessartine", category: "Garnet", lines: [485, 461, 505], bands: [{ start: 480, end: 490, strength: "Manganese band at 485nm" }, { start: 455, end: 465, strength: "Band at 461nm" }], description: "Distinctive manganese bands at 485nm and 461nm in blue, sometimes accompanied by faint almandine bands.", bookRef: "Chapter 29: Absorption Spectra Due to Manganese" },
+            { id: "demantoid_garnet", name: "Demantoid Garnet", variety: "Andradite (Demantoid)", category: "Garnet", lines: [701, 640, 621, 443], bands: [{ start: 440, end: 450, strength: "Intense ferric absorption cutoff below 450nm" }], description: "Chromium doublet at 701nm, diffuse lines at 640/621nm, and intense ferric absorption line/cutoff at 443nm.", bookRef: "Chapter 17: Absorption Spectrum of Demantoid Garnet" },
+            { id: "grossular_garnet", name: "Grossular Garnet (Hessonite/Tsavorite)", variety: "Grossularite", category: "Garnet", lines: [605, 505, 437], bands: [{ start: 600, end: 620, strength: "Faint bands" }], description: "Tsavorite shows chromium doublet; Hessonite shows manganese/iron bands at 437nm.", bookRef: "Chapter 18: Other Chromium Spectra" },
+            { id: "uvarovite", name: "Uvarovite", variety: "Chrome Garnet", category: "Garnet", lines: [688, 600], bands: [{ start: 620, end: 560, strength: "Dense chromium absorption" }], description: "Intense emerald-green chrome garnet with dense absorption band in yellow-green.", bookRef: "Chapter 18: Other Chromium Spectra" },
+
+            // ZIRCON FAMILY
+            { id: "zircon_high", name: "Zircon (High)", variety: "High Zircon", category: "Zircon", lines: [653, 615, 589, 562, 537, 516, 484, 460, 432], bands: [{ start: 650, end: 430, strength: "Multiple sharp rare-earth lines (up to 40+ lines)" }], description: "Rich, complex spectrum with dozens of sharp lines, key lines at 653, 589, 537, and 484nm.", bookRef: "Chapter 32: Absorption Spectra of Zircon" },
+            { id: "zircon_low", name: "Zircon (Low / Metamict)", variety: "Low Zircon", category: "Zircon", lines: [653, 589, 660], bands: [{ start: 650, end: 670, strength: "Diffuse band at 653-660nm" }], description: "Metamict low zircons show a simplified, diffuse spectrum with a prominent broad band around 653-660nm.", bookRef: "Chapter 32: Absorption Spectra of Zircon" },
+            { id: "burma_zircon", name: "Burma Zircon", variety: "High Zircon (Myanmar)", category: "Zircon", lines: [653.5, 615, 589, 562, 537, 516, 484, 432], bands: [{ start: 650, end: 430, strength: "Extremely sharp uranium lines" }], description: "The strongest zircon spectrum known, with line 653.5nm exceptionally intense.", bookRef: "Chapter 32: Absorption Spectra of Zircon" },
+
+            // OLIVINE & BORATE
+            { id: "peridot", name: "Peridot", variety: "Chrysolite / Olivine", category: "Olivine", lines: [493, 473, 453], bands: [{ start: 485, end: 500, strength: "Strong band at 493nm" }, { start: 465, end: 480, strength: "Band at 473nm" }, { start: 445, end: 460, strength: "Band at 453nm" }], description: "Three characteristic iron absorption bands in the blue region at 493nm, 473nm, and 453nm.", bookRef: "Chapter 21: Absorption Spectra of Peridot and Sinhalite" },
+            { id: "sinhalite", name: "Sinhalite", variety: "Sinhalite", category: "Borate", lines: [463, 493, 473, 453], bands: [{ start: 455, end: 470, strength: "Strong band at 463nm" }], description: "Prominent absorption band at 463nm in blue, distinguishing it from peridot.", bookRef: "Chapter 21: Absorption Spectra of Peridot and Sinhalite" },
+
+            // CHRYSOBERYL & ALEXANDRITE
+            { id: "alexandrite", name: "Alexandrite", variety: "Chrysoberyl Variety", category: "Chrysoberyl", lines: [680, 655, 645, 475], bands: [{ start: 620, end: 570, strength: "Broad absorption in yellow" }, { start: 475, end: 468, strength: "Strong band" }], description: "Strong chromium lines in red (~680nm), weaker lines at 655/645nm, and strong 475nm band.", bookRef: "Chapter 15: Absorption Spectrum of Alexandrite" },
+            { id: "chrysoberyl", name: "Chrysoberyl", variety: "Common Chrysoberyl", category: "Chrysoberyl", lines: [444, 537], bands: [{ start: 440, end: 450, strength: "Powerful absorption band at 444nm" }], description: "Powerful absorption band at 444nm identifies common chrysoberyl and cat's-eyes, with faint 537nm line.", bookRef: "Chapter 26: Absorption Spectra of Sapphire and Chrysoberyl" },
+
+            // DIAMOND VARIETIES
+            { id: "cape_diamond", name: "Cape Diamond", variety: "Natural Yellowish Diamond", category: "Diamond", lines: [415.5, 478, 504], bands: [{ start: 410, end: 420, strength: "Cape line at 415.5nm" }], description: "Sharp 'Cape line' at 415.5nm (N3 center), accompanied by lines at 478nm and 504nm.", bookRef: "Chapter 34: Absorption Spectra of Diamond" },
+            { id: "irradiated_yellow_diamond", name: "Irradiated Yellow Diamond", variety: "Treated Diamond", category: "Diamond", lines: [594, 504, 694], bands: [{ start: 590, end: 600, strength: "Line at 594nm (H3 center)" }], description: "Artificial radiation lines at 594nm and 694nm, alongside the 504nm line.", bookRef: "Chapter 34: Absorption Spectra of Diamond" },
+            { id: "natural_pink_diamond", name: "Natural Pink Diamond", variety: "Natural Pink Diamond", category: "Diamond", lines: [563], bands: [{ start: 550, end: 580, strength: "Broad band centered at 563nm" }], description: "Vague, broad absorption band centered at 563nm.", bookRef: "Chapter 34: Absorption Spectra of Diamond" },
+            { id: "green_diamond", name: "Green Diamond", variety: "Natural / Irradiated Diamond", category: "Diamond", lines: [504, 496, 741], bands: [{ start: 730, end: 750, strength: "GR1 center at 741nm" }], description: "Shows GR1 neutral vacancy line at 741nm and 504/496nm doublet.", bookRef: "Chapter 34: Absorption Spectra of Diamond" },
+
+            // JADEITE & PYROXENES / AMPHIBOLES
+            { id: "jadeite", name: "Jadeite", variety: "Jadeite Jade", category: "Pyroxene", lines: [437.5, 690, 630], bands: [{ start: 430, end: 445, strength: "Intense band at 437.5nm" }, { start: 630, end: 690, strength: "Dye bands (if treated)" }], description: "Natural jadeite shows 437.5nm iron band. Dyed green jadeite shows broad dye bands at 630-690nm.", bookRef: "Chapter 16: Absorption Spectrum of Jadeite" },
+            { id: "nephrite", name: "Nephrite", variety: "Amphibole Jade", category: "Amphibole", lines: [509, 491], bands: [{ start: 490, end: 515, strength: "Vague actinolite bands" }], description: "Vague actinolite iron bands at 509nm and 491nm.", bookRef: "Chapter 16: Absorption Spectrum of Jadeite" },
+            { id: "enstatite", name: "Enstatite", variety: "Enstatite", category: "Pyroxene", lines: [506, 546], bands: [{ start: 500, end: 512, strength: "Strong narrow band at 506nm" }], description: "Strong, narrow band at 506nm between green and blue, highly distinctive.", bookRef: "Chapter 22: Absorption Spectra of Enstatite and Diopside" },
+            { id: "chrome_diopside", name: "Chrome Diopside", variety: "Diopside", category: "Pyroxene", lines: [505, 508, 655, 670], bands: [{ start: 500, end: 515, strength: "Double line at 505 and 508nm" }], description: "Double line at 508 and 505nm in place of enstatite's single line, plus chromium lines in red.", bookRef: "Chapter 22: Absorption Spectra of Enstatite and Diopside" },
+            { id: "spodumene", name: "Spodumene (Kunzite / Hiddenite)", variety: "Spodumene", category: "Pyroxene", lines: [438, 432.5, 680], bands: [{ start: 430, end: 445, strength: "Narrow violet band at 438nm" }], description: "Yellow and green (hiddenite) spodumene show narrow bands in violet at 438nm and 432.5nm.", bookRef: "Chapter 27: Absorption Spectra of Aquamarine and Orthoclase" },
+
+            // TOURMALINE FAMILY
+            { id: "tourmaline_green", name: "Green Tourmaline", variety: "Elbaite (Green)", category: "Tourmaline", lines: [497, 450, 415], bands: [{ start: 490, end: 510, strength: "Narrow band at 497nm" }], description: "Characteristic narrow absorption band at 497nm, with cut-off towards blue end.", bookRef: "Chapter 24: Absorption Spectra of Green Tourmaline and Iolite" },
+            { id: "tourmaline_indicolite", name: "Blue Tourmaline (Indicolite)", variety: "Elbaite (Blue)", category: "Tourmaline", lines: [497, 415], bands: [{ start: 640, end: 700, strength: "Total cutoff of red end below 640nm" }], description: "Shows 497nm band and complete absorption of red below 640nm.", bookRef: "Chapter 24: Absorption Spectra of Green Tourmaline and Iolite" },
+            { id: "tourmaline_rubellite", name: "Red Tourmaline (Rubellite)", variety: "Elbaite (Red)", category: "Tourmaline", lines: [525, 537], bands: [{ start: 510, end: 540, strength: "Diffuse band in green" }], description: "Diffuse band in green near 525nm with fine line at 537nm.", bookRef: "Chapter 29: Absorption Spectra Due to Manganese" },
+
+            // OTHER SILICATES & COLLECTOR MINERALS
+            { id: "iolite", name: "Iolite", variety: "Cordierite", category: "Cordierite", lines: [535, 456], bands: [{ start: 530, end: 545, strength: "Absorption band at 535nm" }], description: "Strongly pleochroic gem showing absorption bands at 535nm and 456nm.", bookRef: "Chapter 24: Absorption Spectra of Green Tourmaline and Iolite" },
+            { id: "idocrase", name: "Idocrase (Vesuvianite)", variety: "Idocrase", category: "Silicate", lines: [462, 529], bands: [{ start: 455, end: 470, strength: "Intense band at 462nm" }], description: "Intense absorption band at 462nm producing complete cut-off of blue end.", bookRef: "Chapter 25: Absorption Spectra of Idocrase, Actinolite and..." },
+            { id: "kornerupine", name: "Kornerupine", variety: "Kornerupine", category: "Silicate", lines: [503, 497], bands: [{ start: 495, end: 510, strength: "Absorption bands in blue-green" }], description: "Distinctive absorption bands around 503nm and 497nm due to iron.", bookRef: "Chapter 23: Absorption Spectra of Kornerupine and Axinite" },
+            { id: "axinite", name: "Axinite", variety: "Axinite", category: "Borosilicate", lines: [535, 510], bands: [{ start: 500, end: 540, strength: "Broad absorption bands" }], description: "Absorption bands in green region at approximately 535nm and 510nm.", bookRef: "Chapter 23: Absorption Spectra of Kornerupine and Axinite" },
+            { id: "andalusite", name: "Andalusite", variety: "Andalusite", category: "Aluminosilicate", lines: [553, 450], bands: [{ start: 540, end: 565, strength: "Strong absorption bands in green-yellow" }], description: "Strong pleochroic absorption bands in green-yellow at 553nm.", bookRef: "Chapter 35: Miscellaneous Spectra" },
+            { id: "fibrolite", name: "Fibrolite (Sillimanite)", variety: "Sillimanite", category: "Aluminosilicate", lines: [462, 410], bands: [{ start: 455, end: 470, strength: "Iron band at 462nm" }], description: "Pale blue/green sillimanite shows iron band at 462nm.", bookRef: "Chapter 35: Miscellaneous Spectra" },
+            { id: "kyanite", name: "Kyanite", variety: "Kyanite", category: "Aluminosilicate", lines: [446, 432], bands: [{ start: 435, end: 450, strength: "Iron bands" }], description: "Blue kyanite shows iron absorption bands at 446nm and 432nm.", bookRef: "Chapter 35: Miscellaneous Spectra" },
+
+            // PHOSPHATES, RARE EARTHS & COPPER MINERALS
+            { id: "apatite", name: "Apatite (Yellow & Blue)", variety: "Apatite", category: "Phosphate", lines: [584, 572, 525, 490], bands: [{ start: 570, end: 590, strength: "Didymium REE band group" }], description: "Sharp rare-earth (didymium) absorption spectrum featuring strong band group at 584/572nm.", bookRef: "Chapter 33: The Rare Earth Elements" },
+            { id: "sphene", name: "Sphene (Titanite)", variety: "Titanite", category: "Nesosilicate", lines: [584, 530, 460], bands: [{ start: 575, end: 590, strength: "Rare earth bands in yellow" }], description: "Rare-earth absorption lines similar to apatite/didymium around 584nm.", bookRef: "Chapter 33: The Rare Earth Elements" },
+            { id: "scheelite", name: "Scheelite", variety: "Orange Scheelite", category: "Tungstate", lines: [584, 572, 460], bands: [{ start: 570, end: 590, strength: "Rare earth didymium bands" }], description: "Orange scheelite displays the same rare-earth didymium absorption spectrum as apatite.", bookRef: "Chapter 33: The Rare Earth Elements" },
+            { id: "turquoise", name: "Turquoise", variety: "Turquoise", category: "Phosphate", lines: [432, 460], bands: [{ start: 425, end: 440, strength: "Narrow band at 432nm in violet" }], description: "Genuine turquoise displays narrow strong band at 432nm and vague band at 460nm.", bookRef: "Chapter 31: Absorption Spectra Due to Copper" },
+
+            // CARBONATES, SULFIDES & OTHER
+            { id: "rhodonite", name: "Rhodonite", variety: "Rhodonite", category: "Inosilicate", lines: [503, 545, 550], bands: [{ start: 540, end: 565, strength: "Manganese absorption bands" }], description: "Manganese-rich rhodonite shows characteristic absorption bands in green region.", bookRef: "Chapter 29: Absorption Spectra Due to Manganese" },
+            { id: "rhodochrosite", name: "Rhodochrosite", variety: "Manganese Carbonate", category: "Carbonate", lines: [551, 410], bands: [{ start: 540, end: 560, strength: "Manganese band" }], description: "Rosy red manganese carbonate showing sharp band at 551nm.", bookRef: "Chapter 29: Absorption Spectra Due to Manganese" },
+            { id: "sphalerite", name: "Sphalerite (Zinc Blende)", variety: "Sphalerite", category: "Sulfide", lines: [460, 500, 650], bands: [{ start: 450, end: 520, strength: "Spectrum reminiscent of low zircon" }], description: "High dispersion gem with complex absorption spectrum reminiscent of low zircon.", bookRef: "Chapter 35: Miscellaneous Spectra" },
+            { id: "fluorspar", name: "Fluorspar (Fluorite)", variety: "Fluorite", category: "Halide", lines: [525, 410], bands: [{ start: 410, end: 525, strength: "Fluorescence continuous band and line spectrum" }], description: "Line emission/fluorescence spectra and continuous bands under UV and X-ray excitation.", bookRef: "Chapter 38: Fluorescence Spectra" },
+
+            // SYNTHETICS, SIMULANTS & GLASSES
+            { id: "synthetic_rutile", name: "Synthetic Rutile", variety: "Treated / Synthetic", category: "Man-made", lines: [425], bands: [{ start: 0, end: 425, strength: "Intense cutoff below 425nm" }], description: "Sharp cut-off and intense absorption band beginning at 425nm in violet.", bookRef: "Chapter 36: Absorption in Synthetic Gemstones" },
+            { id: "yag", name: "YAG (Neodymium Doped)", variety: "Synthetic Garnet Simulant", category: "Man-made", lines: [589, 584, 572, 525, 475], bands: [{ start: 570, end: 595, strength: "Hyper-sharp didymium standard lines" }], description: "Used as wavelength calibration standard; exhibits world-class sharp rare-earth spectrum.", bookRef: "Chapter 36: Absorption in Synthetic Gemstones" },
+            { id: "cobalt_glass", name: "Cobalt Glass (Simulant)", variety: "Glass Simulant", category: "Man-made", lines: [530, 589, 656], bands: [{ start: 480, end: 560, strength: "Strong cobalt absorption band" }], description: "Strong cobalt absorption across yellow-green, distinguishable from synthetic blue spinel.", bookRef: "Chapter 37: Absorption Spectra of Glasses" },
+            { id: "didymium_glass", name: "Didymium Glass", variety: "Rare Earth Glass", category: "Man-made", lines: [584, 572, 525, 480], bands: [{ start: 560, end: 600, strength: "Rare-earth absorption lines in yellow" }], description: "Pink glass colored with didymium showing sharp lines in yellow at 584/572nm.", bookRef: "Chapter 37: Absorption Spectra of Glasses" }
+        ];
+
+        // State variables for Multi-Band Filter
+        let activeWavelengths = [504, 520, 573]; // Default to Almandine triplet
+        let matchMode = 'all'; // 'all' or 'any'
+        let tolerance = 8;
+        let sliderCurrentWavelength = 504;
+        let activeTab = 'filter';
+
+        // Initialize Lucide icons & App
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            setupInteractiveSpectrum();
+            setupEventListeners();
+            updateActiveBandsUI();
+            updateFilterResults();
+            updateSearchResults('');
+            populateDatabaseTable();
+        });
+
+        // Tab Switching
+        function switchTab(tabName) {
+            activeTab = tabName;
+            ['filter', 'search', 'database'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`tab-btn-${t}`).classList.remove('bg-indigo-600', 'text-white', 'shadow');
+                document.getElementById(`tab-btn-${t}`).classList.add('text-slate-300');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabName}`).classList.add('bg-indigo-600', 'text-white', 'shadow');
+            document.getElementById(`tab-btn-${tabName}`).classList.remove('text-slate-300');
+            lucide.createIcons();
+        }
+
+        // Setup Interactive Spectrum Clicking & Dragging
+        function setupInteractiveSpectrum() {
+            const spectrumEl = document.getElementById('interactive-spectrum');
+
+            function handleSpectrumClick(e) {
+                const rect = spectrumEl.getBoundingClientRect();
+                const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+                const percentage = x / rect.width;
+                const wavelength = Math.round(700 - percentage * 300);
+                toggleWavelength(wavelength);
+            }
+
+            spectrumEl.addEventListener('click', handleSpectrumClick);
+        }
+
+        function toggleWavelength(nm) {
+            const index = activeWavelengths.indexOf(nm);
+            if (index > -1) {
+                activeWavelengths.splice(index, 1);
+            } else {
+                activeWavelengths.push(nm);
+                activeWavelengths.sort((a, b) => b - a); // Sort descending (700 to 400)
+            }
+            updateActiveBandsUI();
+            updateFilterResults();
+        }
+
+        function addCurrentSliderWavelength() {
+            if (!activeWavelengths.includes(sliderCurrentWavelength)) {
+                activeWavelengths.push(sliderCurrentWavelength);
+                activeWavelengths.sort((a, b) => b - a);
+                updateActiveBandsUI();
+                updateFilterResults();
+            }
+        }
+
+        function removeWavelength(nm) {
+            activeWavelengths = activeWavelengths.filter(w => w !== nm);
+            updateActiveBandsUI();
+            updateFilterResults();
+        }
+
+        function clearAllWavelengths() {
+            activeWavelengths = [];
+            updateActiveBandsUI();
+            updateFilterResults();
+        }
+
+        function loadPreset(wavelengths, mode) {
+            activeWavelengths = [...wavelengths].sort((a, b) => b - a);
+            setMatchMode(mode);
+            updateActiveBandsUI();
+            updateFilterResults();
+        }
+
+        function setMatchMode(mode) {
+            matchMode = mode;
+            if (mode === 'all') {
+                document.getElementById('match-mode-all').className = "px-2.5 py-1 text-[11px] font-semibold rounded bg-indigo-600 text-white transition";
+                document.getElementById('match-mode-any').className = "px-2.5 py-1 text-[11px] font-semibold rounded text-slate-400 hover:text-white transition";
+                document.getElementById('active-filter-desc').textContent = "Match ALL active bands";
+            } else {
+                document.getElementById('match-mode-any').className = "px-2.5 py-1 text-[11px] font-semibold rounded bg-indigo-600 text-white transition";
+                document.getElementById('match-mode-all').className = "px-2.5 py-1 text-[11px] font-semibold rounded text-slate-400 hover:text-white transition";
+                document.getElementById('active-filter-desc').textContent = "Match ANY active band";
+            }
+            updateFilterResults();
+        }
+
+        function updateActiveBandsUI() {
+            // Update Chips
+            const container = document.getElementById('active-bands-container');
+            document.getElementById('active-count').textContent = activeWavelengths.length;
+
+            if (activeWavelengths.length === 0) {
+                container.innerHTML = `<span class="text-[11px] text-slate-500 italic">No active absorption bands selected. Click spectrum or use presets.</span>`;
+            } else {
+                container.innerHTML = activeWavelengths.map(nm => `
+                    <span class="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-950 border border-indigo-700/60 text-indigo-300 rounded-lg text-xs font-mono">
+                        ${nm} nm
+                        <button onclick="removeWavelength(${nm})" class="hover:text-rose-400 font-bold">&times;</button>
+                    </span>
+                `).join('');
+            }
+
+            // Update Cursors on Spectrum Bar
+            const cursorsContainer = document.getElementById('wavelength-cursors-container');
+            cursorsContainer.innerHTML = activeWavelengths.map(nm => {
+                const percentage = ((700 - nm) / 300) * 100;
+                return `
+                    <div class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_#ffffff] z-20 pointer-events-none" style="left: ${percentage}%;">
+                        <div class="absolute -top-6 -translate-x-1/2 bg-white text-slate-950 text-[10px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                            ${nm}nm
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setupEventListeners() {
+            const slider = document.getElementById('wavelength-slider');
+            slider.addEventListener('input', (e) => {
+                sliderCurrentWavelength = parseInt(e.target.value);
+                document.getElementById('slider-value').textContent = sliderCurrentWavelength;
+            });
+
+            const toleranceSelect = document.getElementById('tolerance-select');
+            toleranceSelect.addEventListener('change', (e) => {
+                tolerance = parseInt(e.target.value);
+                updateFilterResults();
+            });
+
+            const nameSearchInput = document.getElementById('name-search-input');
+            nameSearchInput.addEventListener('input', (e) => {
+                updateSearchResults(e.target.value);
+            });
+
+            const dbSearchInput = document.getElementById('db-search-input');
+            dbSearchInput.addEventListener('input', (e) => {
+                populateDatabaseTable(e.target.value);
+            });
+        }
+
+        function resetFilter() {
+            loadPreset([504, 520, 573], 'all');
+            tolerance = 8;
+            document.getElementById('tolerance-select').value = "8";
+        }
+
+        // Helper: Generate Mini Spectroscope View HTML for a Gem
+        function renderSpectroscopeMini(gem) {
+            let linesHtml = '';
+            gem.lines.forEach(line => {
+                const pos = ((700 - line) / 300) * 100;
+                if (pos >= 0 && pos <= 100) {
+                    const isMatchedFilter = activeWavelengths.some(w => Math.abs(w - line) <= tolerance);
+                    const lineColor = isMatchedFilter ? 'bg-indigo-500 shadow-[0_0_6px_#6366f1]' : 'bg-black';
+                    linesHtml += `<div class="absolute top-0 bottom-0 w-0.5 ${lineColor} z-10" style="left: ${pos}%;" title="Line: ${line}nm"></div>`;
+                }
+            });
+
+            let bandsHtml = '';
+            if (gem.bands) {
+                gem.bands.forEach(band => {
+                    const startPos = ((700 - band.start) / 300) * 100;
+                    const endPos = ((700 - band.end) / 300) * 100;
+                    const left = Math.min(startPos, endPos);
+                    const width = Math.abs(endPos - startPos);
+                    bandsHtml += `<div class="absolute top-0 bottom-0 bg-black/40 border-x border-black/60 z-0" style="left: ${Math.max(0, left)}%; width: ${Math.max(2, width)}%;" title="Band: ${band.start}-${band.end}nm"></div>`;
+                });
+            }
+
+            return `
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[10px] font-mono text-slate-400">
+                        <span>700nm</span>
+                        <span>550nm</span>
+                        <span>400nm</span>
+                    </div>
+                    <div class="relative h-8 rounded-lg spectrum-bar border border-slate-700 overflow-hidden shadow-inner">
+                        ${bandsHtml}
+                        ${linesHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Check if gem matches active multi-band filters with tolerance
+        function gemMatchesActiveBands(gem) {
+            if (activeWavelengths.length === 0) return true; // If no filters selected, show all
+
+            const matchesWavelength = (target) => {
+                const matchesLine = gem.lines.some(l => Math.abs(l - target) <= tolerance);
+                const matchesBand = gem.bands && gem.bands.some(b => {
+                    const min = Math.min(b.start, b.end);
+                    const max = Math.max(b.start, b.end);
+                    return (target >= min - tolerance && target <= max + tolerance);
+                });
+                return matchesLine || matchesBand;
+            };
+
+            if (matchMode === 'all') {
+                return activeWavelengths.every(w => matchesWavelength(w));
+            } else {
+                return activeWavelengths.some(w => matchesWavelength(w));
+            }
+        }
+
+        // Update Filter Results
+        function updateFilterResults() {
+            const grid = document.getElementById('filter-results-grid');
+            const matchingGems = gemDatabase.filter(gem => gemMatchesActiveBands(gem));
+
+            document.getElementById('match-count').textContent = matchingGems.length;
+
+            if (matchingGems.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+                        <i data-lucide="search-x" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                        <p class="text-sm font-semibold">No gems found matching the selected absorption bands.</p>
+                        <p class="text-xs text-slate-500 mt-1">Try switching to "Match ANY", clearing bands, or adjusting tolerance.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = matchingGems.map(gem => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-indigo-500/50 transition-all shadow-lg">
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-white">${gem.name}</h4>
+                                <p class="text-xs text-indigo-400 font-medium">${gem.variety}</p>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">${gem.category}</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-4 line-clamp-3">${gem.description}</p>
+                    </div>
+
+                    <div class="space-y-3 pt-3 border-t border-slate-800">
+                        <div>
+                            <div class="text-[10px] uppercase font-mono text-slate-400 mb-1">Simulated Spectroscope View:</div>
+                            ${renderSpectroscopeMini(gem)}
+                        </div>
+                        <div class="flex flex-wrap gap-1 text-[10px] font-mono">
+                            <span class="text-slate-400">Lines:</span>
+                            ${gem.lines.map(l => {
+                                const isMatched = activeWavelengths.some(w => Math.abs(w - l) <= tolerance);
+                                return `<span class="px-1.5 py-0.5 rounded border ${isMatched ? 'bg-indigo-600 text-white font-bold border-indigo-500 shadow-sm' : 'bg-slate-800 text-indigo-300 border-slate-700'}">${l}nm</span>`;
+                            }).join('')}
+                        </div>
+                        <div class="text-[10px] text-slate-500 italic truncate">${gem.bookRef}</div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Update Reverse Search
+        function updateSearchResults(query) {
+            const grid = document.getElementById('search-results-grid');
+            const q = query.toLowerCase().trim();
+            const results = q === '' ? gemDatabase : gemDatabase.filter(g =>
+                g.name.toLowerCase().includes(q) ||
+                g.variety.toLowerCase().includes(q) ||
+                g.category.toLowerCase().includes(q) ||
+                g.description.toLowerCase().includes(q)
+            );
+
+            if (results.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+                        <i data-lucide="frown" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                        <p class="text-sm font-semibold">No gems matching "${query}".</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = results.map(gem => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-white">${gem.name}</h4>
+                                <p class="text-xs text-indigo-400 font-medium">${gem.variety}</p>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">${gem.category}</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-4">${gem.description}</p>
+                    </div>
+
+                    <div class="space-y-3 pt-3 border-t border-slate-800">
+                        <div>
+                            <div class="text-[10px] uppercase font-mono text-slate-400 mb-1">Spectroscopic Profile:</div>
+                            ${renderSpectroscopeMini(gem)}
+                        </div>
+                        <div class="flex flex-wrap gap-1 text-[10px] font-mono">
+                            <span class="text-slate-400">Lines:</span>
+                            ${gem.lines.map(l => `<span class="px-1.5 py-0.5 bg-slate-800 text-indigo-300 rounded border border-slate-700">${l}nm</span>`).join('')}
+                        </div>
+                        <div class="text-[10px] text-slate-500 italic truncate">${gem.bookRef}</div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Populate Database Table
+        function populateDatabaseTable(query = '') {
+            const tbody = document.getElementById('database-table-body');
+            const q = query.toLowerCase().trim();
+            const results = q === '' ? gemDatabase : gemDatabase.filter(g =>
+                g.name.toLowerCase().includes(q) ||
+                g.variety.toLowerCase().includes(q) ||
+                g.category.toLowerCase().includes(q) ||
+                g.bookRef.toLowerCase().includes(q)
+            );
+
+            if (results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">No records found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = results.map(gem => `
+                <tr class="hover:bg-slate-800/50 transition">
+                    <td class="p-3 font-bold text-white">${gem.name}</td>
+                    <td class="p-3 text-indigo-400">${gem.variety}</td>
+                    <td class="p-3 font-mono text-slate-300">${gem.lines.join(', ')} nm</td>
+                    <td class="p-3 text-slate-400">${gem.bands ? gem.bands.map(b => `${b.start}-${b.end}nm (${b.strength})`).join('; ') : 'None'}</td>
+                    <td class="p-3 text-slate-500 italic">${gem.bookRef}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

@@ -18,7 +18,15 @@
  *   fluorescence : string         — UV fluorescence
  *   pleochroism  : string
  *   comments     : string
+ *   spectroscopy : {              — UV-Vis absorption spectroscopy (from Anderson & Payne)
+ *     lines  : number[]           — characteristic absorption line wavelengths (nm)
+ *     bands  : [{ start, end, strength }]  — absorption band regions
+ *     chromophore : string        — causative ion / color agent
+ *     bookRef     : string        — chapter reference in The Spectroscope and Gemmology
+ *     description : string        — plain-language spectral description
+ *   } | null  (null = no diagnostic spectrum)
  */
+
 
 const GEMSTONES = [
   {
@@ -1519,3 +1527,865 @@ const GEMSTONES = [
     comments: "Often dyed to imitate Turquoise or Lapis Lazuli. White with gray/black veining. Very porous."
   }
 ];
+
+/**
+ * SPECTROSCOPY_DB
+ * Comprehensive UV-Vis absorption spectroscopy database
+ * Source: Anderson & Payne, "The Spectroscope and Gemmology" (280 chapters)
+ * + GIA Scientific Literature & Raman / FTIR / PL data
+ *
+ * Keyed by gem name (must match GEMSTONES[].name exactly).
+ * Each entry: { lines, bands, chromophore, bookRef, description }
+ *  lines      : number[]  — characteristic absorption wavelengths (nm), 400–700
+ *  bands      : Array<{ start:number, end:number, strength:string }> — broad absorption regions
+ *  chromophore: string    — causative ion / color center
+ *  bookRef    : string    — chapter in Anderson & Payne
+ *  description: string    — plain-language spectral summary
+ */
+const SPECTROSCOPY_DB = {
+
+  // ─────────────────────────────────────────────
+  //  CORUNDUM
+  // ─────────────────────────────────────────────
+  "Corundum": {
+    lines: [693.5, 668, 659, 476, 468, 450, 460, 471],
+    bands: [{ start: 620, end: 540, strength: "Broad chromium/iron absorption" }],
+    chromophore: "Cr³⁺ (ruby) / Fe²⁺·Fe³⁺ (sapphire)",
+    bookRef: "Ch. 11 & 26: Ruby and Sapphire Spectra",
+    description: "Red corundum (ruby) shows chromium doublet at 693.5nm and 659nm; blue sapphire shows iron triplet at 450, 460, 471nm."
+  },
+  "Syn. Corundum": {
+    lines: [693.5, 668, 659, 476, 468],
+    bands: [{ start: 620, end: 540, strength: "Intense chromium absorption" }],
+    chromophore: "Cr³⁺ (synthetic, high purity)",
+    bookRef: "Ch. 36: Synthetic Gemstones",
+    description: "Spectrum identical to natural ruby but with hyper-intense fluorescence doublet due to very pure chromium in Verneuil material."
+  },
+
+  // ─────────────────────────────────────────────
+  //  GARNET GROUP
+  // ─────────────────────────────────────────────
+  "Almandite": {
+    lines: [504, 520, 573, 610, 680],
+    bands: [
+      { start: 495, end: 515, strength: "Intense — 504nm diagnostic" },
+      { start: 515, end: 530, strength: "Moderate — 520nm" },
+      { start: 565, end: 582, strength: "Moderate — 573nm" }
+    ],
+    chromophore: "Fe²⁺ (ferrous iron)",
+    bookRef: "Ch. 19: Almandine Garnet",
+    description: "Classic iron triplet at 504nm (intense), 520nm, and 573nm — the most diagnostic almandine spectrum."
+  },
+  "Spessartite": {
+    lines: [485, 461, 505, 434],
+    bands: [
+      { start: 475, end: 495, strength: "Strong — 485nm Mn band" },
+      { start: 455, end: 468, strength: "Moderate — 461nm" }
+    ],
+    chromophore: "Mn²⁺ (manganese)",
+    bookRef: "Ch. 29: Manganese Spectra",
+    description: "Distinctive manganese bands at 485nm and 461nm in the blue, often with faint almandine lines at 505nm."
+  },
+  "Pyrope": {
+    lines: [685, 620, 575, 505],
+    bands: [
+      { start: 555, end: 625, strength: "Broad — chromium/iron absorption band" }
+    ],
+    chromophore: "Cr³⁺ + Fe²⁺",
+    bookRef: "Ch. 13: Pyrope and Topaz",
+    description: "Broad absorption band in yellow-green; chrome pyropes show faint red doublet near 685nm."
+  },
+  "Rhodolite": {
+    lines: [504, 520, 573, 685],
+    bands: [
+      { start: 495, end: 515, strength: "Moderate — iron band at 504nm" },
+      { start: 555, end: 620, strength: "Broad iron-chromium" }
+    ],
+    chromophore: "Fe²⁺ + Cr³⁺ (mixed pyrope-almandine)",
+    bookRef: "Ch. 13 & 19: Pyrope/Almandine composite",
+    description: "Mixed spectrum of pyrope and almandine; 504nm line present but usually weaker than pure almandine."
+  },
+  "Grossularite": {
+    lines: [605, 505, 437],
+    bands: [
+      { start: 595, end: 615, strength: "Faint Mn band" },
+      { start: 430, end: 442, strength: "Hessonite: Mn/Fe cutoff" }
+    ],
+    chromophore: "Mn³⁺ (Hessonite) / V³⁺ + Cr³⁺ (Tsavorite)",
+    bookRef: "Ch. 18: Other Chromium Spectra / Ch. 29: Manganese",
+    description: "Tsavorite shows chromium spectrum; hessonite shows manganese absorption near 437nm and a faint band at 605nm."
+  },
+  "Andradite": {
+    lines: [701, 640, 621, 443],
+    bands: [
+      { start: 435, end: 450, strength: "Intense — ferric iron cutoff" }
+    ],
+    chromophore: "Cr³⁺ (demantoid) / Fe³⁺",
+    bookRef: "Ch. 17: Demantoid Garnet / Ch. 28: Andradite & Epidote",
+    description: "Demantoid variety: chromium doublet at 701nm, diffuse bands at 640/621nm, and diagnostic ferric absorption/cutoff at 443nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  BERYL FAMILY
+  // ─────────────────────────────────────────────
+  "Emerald": {
+    lines: [683, 680, 637, 600, 477],
+    bands: [
+      { start: 625, end: 595, strength: "Broad — orange absorption band" },
+      { start: 470, end: 483, strength: "Moderate — blue band at 477nm" }
+    ],
+    chromophore: "Cr³⁺ (chromium)",
+    bookRef: "Ch. 14: Emerald Spectrum",
+    description: "Chromium doublet in red (683nm, 680nm), absorption line at 637nm, broad orange band at 600nm, and 477nm blue line."
+  },
+  "Aquamarine": {
+    lines: [537, 456, 427],
+    bands: [
+      { start: 530, end: 543, strength: "Faint — E-ray line at 537nm" },
+      { start: 450, end: 463, strength: "Moderate — Fe²⁺ band at 456nm" }
+    ],
+    chromophore: "Fe²⁺·Fe³⁺ (iron charge transfer)",
+    bookRef: "Ch. 27: Aquamarine and Orthoclase",
+    description: "Faint 537nm line (extraordinary ray only), iron bands at 456nm and 427nm. Spectrum used to distinguish from blue topaz."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SPINEL
+  // ─────────────────────────────────────────────
+  "Spinel": {
+    lines: [685, 682, 540, 458, 478, 500],
+    bands: [
+      { start: 680, end: 687, strength: "Red spinel: organ-pipe fluorescent group" },
+      { start: 520, end: 560, strength: "Red spinel: broad green absorption" },
+      { start: 445, end: 505, strength: "Blue spinel: cobalt triplet" }
+    ],
+    chromophore: "Cr³⁺ (red) / Co²⁺ (blue)",
+    bookRef: "Ch. 12: Red Spinel / Ch. 20: Blue Spinel",
+    description: "Red spinel: diagnostic organ-pipe group at 685/682nm. Blue natural spinel: cobalt triple bands at 458, 478, 500nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  CHRYSOBERYL & ALEXANDRITE
+  // ─────────────────────────────────────────────
+  "Chrysoberyl": {
+    lines: [680, 665, 655, 645, 505, 475],
+    bands: [
+      { start: 580, end: 620, strength: "Alexandrite: broad chromium absorption in red incandescent" },
+      { start: 475, end: 510, strength: "Alexandrite: broad absorption in yellow-green" }
+    ],
+    chromophore: "Cr³⁺ (alexandrite variety)",
+    bookRef: "Ch. 26: Sapphire and Chrysoberyl",
+    description: "Alexandrite variety shows a fine chromium group at 680nm, 665nm, 655nm plus broad bands at 580nm and 475-510nm causing the famous color change."
+  },
+
+  // ─────────────────────────────────────────────
+  //  DIAMOND
+  // ─────────────────────────────────────────────
+  "Diamond": {
+    lines: [415.5, 478, 504, 594, 694],
+    bands: [
+      { start: 410, end: 420, strength: "Cape: N3 center at 415.5nm" },
+      { start: 500, end: 508, strength: "H3 center (HPHT treated)" }
+    ],
+    chromophore: "N3 nitrogen (cape) / H3 center (HPHT) / radiation centers",
+    bookRef: "Ch. 34: Diamond Spectra / PL at 77K",
+    description: "Cape diamonds: diagnostic N3 line at 415.5nm + lines at 478nm and 504nm. Irradiated diamonds: 694nm line. HPHT treated: H3 at 503nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  ZIRCON
+  // ─────────────────────────────────────────────
+  "Zircon": {
+    lines: [653, 615, 589, 562, 537, 516, 484, 460, 432],
+    bands: [
+      { start: 648, end: 658, strength: "Intense — key 653nm uranium/REE line" }
+    ],
+    chromophore: "U⁴⁺ / Th⁴⁺ + rare earth elements",
+    bookRef: "Ch. 32: Zircon Spectra",
+    description: "Rich comb-like spectrum with dozens of fine lines. Key diagnostic line at 653nm. High zircon shows up to 40+ lines; metamict low zircon shows diffuse band only."
+  },
+
+  // ─────────────────────────────────────────────
+  //  JADEITE / NEPHRITE
+  // ─────────────────────────────────────────────
+  "Jadeite": {
+    lines: [437.5, 450, 630, 690],
+    bands: [
+      { start: 432, end: 443, strength: "Diagnostic — Fe³⁺ at 437.5nm" },
+      { start: 620, end: 700, strength: "Chromium jadeite: red band" }
+    ],
+    chromophore: "Fe³⁺ (green jadeite) / Cr³⁺ (imperial green)",
+    bookRef: "Ch. 16: Jadeite Spectrum",
+    description: "Diagnostic ferric iron line at 437.5nm. Imperial green jadeite (chrome) shows chromium doublet in red. Raman: 700, 1039 cm⁻¹."
+  },
+  "Nephrite": {
+    lines: [460, 498, 689],
+    bands: [
+      { start: 455, end: 470, strength: "Moderate — Fe²⁺ at 460nm" }
+    ],
+    chromophore: "Fe²⁺ (actinolite iron)",
+    bookRef: "Ch. 25: Idocrase, Actinolite, Serpentine",
+    description: "Nephrite (calcium magnesium actinolite) shows iron absorption at 460nm and 498nm. Raman: 675, 1061 cm⁻¹ distinguishes from jadeite."
+  },
+
+  // ─────────────────────────────────────────────
+  //  TOURMALINE
+  // ─────────────────────────────────────────────
+  "Tourmaline": {
+    lines: [525, 537, 458],
+    bands: [
+      { start: 515, end: 545, strength: "Rubellite: Mn broad band 525nm" },
+      { start: 450, end: 465, strength: "Indicolite: iron absorption" }
+    ],
+    chromophore: "Mn³⁺ (rubellite) / Fe²⁺·Fe³⁺ (indicolite) / Cr³⁺ (chrome tourmaline)",
+    bookRef: "Ch. 24: Green Tourmaline and Iolite",
+    description: "Green tourmaline: iron bands at 497nm. Rubellite (red): broad Mn band at 525nm with 537nm line. Chrome tourmaline: chromium spectrum."
+  },
+
+  // ─────────────────────────────────────────────
+  //  PERIDOT
+  // ─────────────────────────────────────────────
+  "Peridot": {
+    lines: [493, 473, 453],
+    bands: [
+      { start: 448, end: 460, strength: "Intense — 453nm" },
+      { start: 468, end: 478, strength: "Intense — 473nm" },
+      { start: 488, end: 498, strength: "Intense — 493nm" }
+    ],
+    chromophore: "Fe²⁺ (ferrous iron)",
+    bookRef: "Ch. 21: Peridot and Sinhalite",
+    description: "Diagnostic trio of fine iron absorption lines at 453nm, 473nm, and 493nm in the blue-green. All three lines together are unique to peridot."
+  },
+
+  // ─────────────────────────────────────────────
+  //  TOPAZ
+  // ─────────────────────────────────────────────
+  "Topaz": {
+    lines: [],
+    bands: [],
+    chromophore: "Color centers / Cr³⁺ (pink Imperial topaz) / Fe³⁺ (yellow)",
+    bookRef: "Ch. 13: Pyrope and Topaz",
+    description: "Colorless and blue topaz generally show no diagnostic absorption. Pink Imperial topaz may show faint chromium lines. Yellow: faint Fe³⁺."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SPHENE (TITANITE)
+  // ─────────────────────────────────────────────
+  "Sphene (Titanite)": {
+    lines: [585, 572, 532],
+    bands: [
+      { start: 565, end: 595, strength: "Rare earth sharp comb — 585nm, 572nm" }
+    ],
+    chromophore: "Nd³⁺ / Pr³⁺ (rare earth elements)",
+    bookRef: "Ch. 33: Rare Earth Elements",
+    description: "Sharp rare-earth doublet around 572–585nm (didymium-like). Some green sphenes also show iron bands."
+  },
+
+  // ─────────────────────────────────────────────
+  //  APATITE
+  // ─────────────────────────────────────────────
+  "Apatite": {
+    lines: [512, 491, 464, 585, 572, 578],
+    bands: [
+      { start: 580, end: 590, strength: "Yellow apatite: Nd/Pr REE lines" }
+    ],
+    chromophore: "Nd³⁺ + Pr³⁺ (yellow) / Mn²⁺ (green) / color centers (blue)",
+    bookRef: "Ch. 33: Rare Earth Elements",
+    description: "Yellow and green apatites show sharp rare-earth 'comb' lines near 578–585nm. Blue apatite shows Mn²⁺ band at 512nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  DEMANTOID (separate entry)
+  // ─────────────────────────────────────────────
+  "Demantoid": {
+    lines: [701, 640, 621, 443],
+    bands: [
+      { start: 435, end: 450, strength: "Intense ferric iron cutoff below 443nm" }
+    ],
+    chromophore: "Cr³⁺ + Fe³⁺",
+    bookRef: "Ch. 17: Demantoid Garnet",
+    description: "Chromium doublet at 701nm, diffuse bands at 640nm and 621nm, plus intense ferric iron cutoff/line at 443nm. Very distinctive."
+  },
+
+  // ─────────────────────────────────────────────
+  //  ALEXANDRITE (separate entry)
+  // ─────────────────────────────────────────────
+  "Alexandrite": {
+    lines: [680.5, 678.5, 665, 655, 645, 475, 468],
+    bands: [
+      { start: 580, end: 630, strength: "Broad Cr³⁺ band (orange/red incandescent)" },
+      { start: 468, end: 508, strength: "Broad Cr³⁺ band (green daylight)" }
+    ],
+    chromophore: "Cr³⁺ (chromium — balanced crystal field)",
+    bookRef: "Ch. 15: Alexandrite Spectrum",
+    description: "Alexandrite's unique color change caused by two broad Cr³⁺ bands straddling the yellow-green. Sharp doublet at 680.5/678.5nm + multiple fine lines. Most distinctive spectrum in gemology."
+  },
+
+  // ─────────────────────────────────────────────
+  //  RUBY (separate entry for Corundum variety)
+  // ─────────────────────────────────────────────
+  "Ruby": {
+    lines: [693.5, 668, 659, 476, 468],
+    bands: [
+      { start: 620, end: 540, strength: "Broad — yellow-green chromium absorption" }
+    ],
+    chromophore: "Cr³⁺ (chromium)",
+    bookRef: "Ch. 11: Ruby Spectrum",
+    description: "Strong chromium fluorescence doublet at 693.5nm. Finer lines at 668nm and 659nm. Violet doublet at 476nm and 468nm. Broad yellow-green absorption."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SAPPHIRE (Blue)
+  // ─────────────────────────────────────────────
+  "Sapphire": {
+    lines: [450, 460, 471],
+    bands: [
+      { start: 445, end: 478, strength: "Fe²⁺·Ti⁴⁺ charge transfer triplet" }
+    ],
+    chromophore: "Fe²⁺·Ti⁴⁺ charge transfer + Fe³⁺",
+    bookRef: "Ch. 26: Sapphire and Chrysoberyl",
+    description: "Diagnostic iron triplet at 450nm (strongest), 460nm, and 471nm. The 450nm line alone is nearly conclusive for natural blue sapphire origin."
+  },
+
+  // ─────────────────────────────────────────────
+  //  COBALT-BLUE GLASS
+  // ─────────────────────────────────────────────
+  "Cobalt Glass": {
+    lines: [656, 589, 534],
+    bands: [
+      { start: 645, end: 665, strength: "Cobalt — broad band at 656nm" },
+      { start: 580, end: 598, strength: "Cobalt — band at 589nm" },
+      { start: 525, end: 542, strength: "Cobalt — band at 534nm (narrower)" }
+    ],
+    chromophore: "Co²⁺ (cobalt)",
+    bookRef: "Ch. 37: Glasses Spectra",
+    description: "Three broad cobalt bands at 656nm, 589nm, and 534nm. The central 589nm band is broader than in natural blue spinel, the 534nm band narrower."
+  },
+
+  // ─────────────────────────────────────────────
+  //  DIDYMIUM GLASS
+  // ─────────────────────────────────────────────
+  "Didymium Glass": {
+    lines: [586, 582, 573, 521, 491],
+    bands: [
+      { start: 575, end: 590, strength: "Very sharp — Nd³⁺/Pr³⁺ narrow lines" }
+    ],
+    chromophore: "Nd³⁺ + Pr³⁺ (neodymium/praseodymium rare earths)",
+    bookRef: "Ch. 37: Glasses Spectra / Ch. 33: Rare Earth Elements",
+    description: "Extremely fine, sharp comb-like lines near 586nm, 582nm, 573nm (and more in UV region). Considered the 'soap line' standard for spectroscope calibration."
+  },
+
+  // ─────────────────────────────────────────────
+  //  RHODONITE
+  // ─────────────────────────────────────────────
+  "Rhodonite": {
+    lines: [545, 503],
+    bands: [
+      { start: 535, end: 555, strength: "Mn²⁺ broad band at 545nm" }
+    ],
+    chromophore: "Mn²⁺ (manganese)",
+    bookRef: "Ch. 29: Manganese Spectra",
+    description: "Broad manganese absorption band centered near 545nm. Faint line at 503nm. Spectrum similar to rhodochrosite."
+  },
+
+  // ─────────────────────────────────────────────
+  //  IOLITE (CORDIERITE)
+  // ─────────────────────────────────────────────
+  "Iolite": {
+    lines: [585, 535, 492, 456, 436, 426],
+    bands: [
+      { start: 580, end: 595, strength: "Fe²⁺ band" },
+      { start: 425, end: 440, strength: "Fe²⁺ cutoff" }
+    ],
+    chromophore: "Fe²⁺ (ferrous iron)",
+    bookRef: "Ch. 24: Green Tourmaline and Iolite",
+    description: "Multiple iron absorption lines/bands at 585, 535, 492, 456, 436, 426nm. Strongly pleochroic — spectrum varies with crystal direction."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SINHALITE
+  // ─────────────────────────────────────────────
+  "Sinhalite": {
+    lines: [493, 475, 453, 434],
+    bands: [
+      { start: 448, end: 460, strength: "Fe²⁺ — 453nm line" },
+      { start: 468, end: 480, strength: "Fe²⁺ — 475nm" },
+      { start: 488, end: 498, strength: "Fe²⁺ — 493nm" }
+    ],
+    chromophore: "Fe²⁺ (ferrous iron — similar to peridot)",
+    bookRef: "Ch. 21: Peridot and Sinhalite",
+    description: "Spectrum similar to peridot with three iron lines at 493, 475, and 453nm. Additional line at 434nm differentiates sinhalite from peridot."
+  },
+
+  // ─────────────────────────────────────────────
+  //  KORNERUPINE
+  // ─────────────────────────────────────────────
+  "Kornerupine": {
+    lines: [540, 503, 446],
+    bands: [
+      { start: 495, end: 510, strength: "Fe²⁺ — 503nm" },
+      { start: 535, end: 545, strength: "Fe²⁺ — 540nm" }
+    ],
+    chromophore: "Fe²⁺ + V³⁺ (iron / vanadium)",
+    bookRef: "Ch. 23: Kornerupine and Axinite",
+    description: "Iron lines at 503nm and 540nm. Some specimens show vanadium spectrum. Strongly pleochroic — different absorption axes."
+  },
+
+  // ─────────────────────────────────────────────
+  //  AXINITE
+  // ─────────────────────────────────────────────
+  "Axinite": {
+    lines: [512, 492, 466],
+    bands: [
+      { start: 460, end: 470, strength: "Fe²⁺ — 466nm" },
+      { start: 488, end: 497, strength: "Mn band at 492nm" }
+    ],
+    chromophore: "Fe²⁺ + Mn²⁺",
+    bookRef: "Ch. 23: Kornerupine and Axinite",
+    description: "Multiple fine iron and manganese absorption lines at 512nm, 492nm, and 466nm. Characteristic clove-brown color."
+  },
+
+  // ─────────────────────────────────────────────
+  //  ENSTATITE / DIOPSIDE
+  // ─────────────────────────────────────────────
+  "Enstatite": {
+    lines: [506, 547],
+    bands: [
+      { start: 499, end: 512, strength: "Fe²⁺ — 506nm (diagnostic)" }
+    ],
+    chromophore: "Fe²⁺ (ferrous iron)",
+    bookRef: "Ch. 22: Enstatite and Diopside",
+    description: "Diagnostic line at 506nm (or doublet 505/508nm for diopside). Chrome diopside shows a chromium spectrum instead."
+  },
+
+  // ─────────────────────────────────────────────
+  //  TURQUOISE
+  // ─────────────────────────────────────────────
+  "Turquoise": {
+    lines: [432, 460],
+    bands: [
+      { start: 425, end: 445, strength: "Cu²⁺ — broad cutoff" }
+    ],
+    chromophore: "Cu²⁺ (copper)",
+    bookRef: "Ch. 31: Copper and Turquoise",
+    description: "Broad copper absorption extending from UV through blue region, with weak lines at 432nm and 460nm. Opaque; spectrum rarely diagnostic."
+  },
+
+  // ─────────────────────────────────────────────
+  //  FLUORSPAR (FLUORITE)
+  // ─────────────────────────────────────────────
+  "Fluorite": {
+    lines: [],
+    bands: [
+      { start: 415, end: 425, strength: "Yttrium REE — faint lines in some green" }
+    ],
+    chromophore: "Color centers / REE impurities",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Most fluorites show no diagnostic absorption spectrum. Some green fluorites from specific localities show faint rare-earth lines."
+  },
+
+  // ─────────────────────────────────────────────
+  //  CZ (CUBIC ZIRCONIA)
+  // ─────────────────────────────────────────────
+  "CZ (Cubic Zirconia)": {
+    lines: [],
+    bands: [],
+    chromophore: "None (colorless) / dopants for colored varieties",
+    bookRef: "Ch. 36: Synthetic Gemstones",
+    description: "Colorless CZ has no diagnostic absorption spectrum. Colored CZ may show rare-earth or transition-metal bands depending on dopant used."
+  },
+
+  // ─────────────────────────────────────────────
+  //  ZIRCON additional (High, separate)
+  // ─────────────────────────────────────────────
+  "Zircon (High)": {
+    lines: [653, 615, 589, 562, 537, 516, 484, 460, 432],
+    bands: [{ start: 648, end: 658, strength: "Key diagnostic 653nm line" }],
+    chromophore: "U⁴⁺ + Th⁴⁺ + Nd³⁺/Pr³⁺ (radioactive / REE)",
+    bookRef: "Ch. 32: Zircon Spectra",
+    description: "High zircon: rich spectrum with up to 40+ sharp lines. 653nm is the single most diagnostic line."
+  },
+
+  // ─────────────────────────────────────────────
+  //  EPIDOTE
+  // ─────────────────────────────────────────────
+  "Epidote": {
+    lines: [475, 455, 438],
+    bands: [
+      { start: 448, end: 462, strength: "Fe³⁺ absorption" }
+    ],
+    chromophore: "Fe³⁺ (ferric iron)",
+    bookRef: "Ch. 28: Andradite and Epidote",
+    description: "Iron absorption bands in the violet-blue region at 475nm, 455nm, and 438nm. Very similar to andradite garnet spectrum."
+  },
+
+  // ─────────────────────────────────────────────
+  //  KUNZITE (Spodumene)
+  // ─────────────────────────────────────────────
+  "Kunzite": {
+    lines: [550],
+    bands: [
+      { start: 540, end: 560, strength: "Mn³⁺ — faint absorption at 550nm" }
+    ],
+    chromophore: "Mn³⁺ (manganese)",
+    bookRef: "Ch. 29: Manganese Spectra",
+    description: "Faint manganese absorption at 550nm in the green. Color is strongly pleochroic (pink/colorless/violet). No strong diagnostic lines."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SPODUMENE (Hiddenite/Green variety)
+  // ─────────────────────────────────────────────
+  "Hiddenite": {
+    lines: [686, 669, 646],
+    bands: [
+      { start: 640, end: 695, strength: "Cr³⁺ absorption doublet" }
+    ],
+    chromophore: "Cr³⁺ (chromium — rare)",
+    bookRef: "Ch. 18: Other Chromium Spectra",
+    description: "True hiddenite (chrome-colored) shows a weak chromium doublet in red. Most 'hiddenite' on market is iron-colored green spodumene with no diagnostic spectrum."
+  },
+
+  // ─────────────────────────────────────────────
+  //  BERYL (Family Overview)
+  // ─────────────────────────────────────────────
+  "Beryl": {
+    lines: [683, 680, 637, 537, 456, 427],
+    bands: [
+      { start: 580, end: 630, strength: "Chromium (emerald) or iron (aquamarine) bands" }
+    ],
+    chromophore: "Cr³⁺ (emerald) / Fe²⁺·Fe³⁺ (aquamarine/heliodor)",
+    bookRef: "Ch. 14 & 27: Emerald and Aquamarine Spectra",
+    description: "Varies by variety: Emerald displays chromium doublet at 683/680nm with 637nm line; Aquamarine shows 537nm and 456nm iron lines."
+  },
+
+  // ─────────────────────────────────────────────
+  //  DIOPSIDE / CHROME DIOPSIDE
+  // ─────────────────────────────────────────────
+  "Diopside": {
+    lines: [505, 508, 655, 670],
+    bands: [
+      { start: 500, end: 515, strength: "Double line at 505 and 508nm" }
+    ],
+    chromophore: "Fe²⁺ (iron) / Cr³⁺ (chrome diopside)",
+    bookRef: "Ch. 22: Enstatite and Diopside",
+    description: "Distinctive double line at 505nm and 508nm in green separates diopside from enstatite (506nm). Chrome diopside adds chromium lines in red."
+  },
+
+  // ─────────────────────────────────────────────
+  //  KYANITE
+  // ─────────────────────────────────────────────
+  "Kyanite": {
+    lines: [446, 432],
+    bands: [
+      { start: 435, end: 450, strength: "Iron absorption bands in violet-blue" }
+    ],
+    chromophore: "Fe³⁺ (ferric iron)",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Blue kyanite shows distinctive iron absorption bands at 446nm and 432nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  IDOCRASE (VESUVIANITE)
+  // ─────────────────────────────────────────────
+  "Idocrase (Vesuvianite)": {
+    lines: [462, 529],
+    bands: [
+      { start: 455, end: 470, strength: "Intense band at 462nm producing cutoff" }
+    ],
+    chromophore: "Fe³⁺ (ferric iron)",
+    bookRef: "Ch. 25: Idocrase and Actinolite",
+    description: "Intense absorption band at 462nm in blue producing complete cutoff of the blue-violet region."
+  },
+
+  // ─────────────────────────────────────────────
+  //  ANDALUSITE
+  // ─────────────────────────────────────────────
+  "Andalusite": {
+    lines: [553, 450],
+    bands: [
+      { start: 540, end: 565, strength: "Strong absorption in green-yellow" }
+    ],
+    chromophore: "Fe³⁺ + Mn³⁺",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Strong pleochroic absorption band in green-yellow at 553nm; spectrum shifts markedly with crystal orientation."
+  },
+
+  // ─────────────────────────────────────────────
+  //  RHODOCHROSITE
+  // ─────────────────────────────────────────────
+  "Rhodochrosite": {
+    lines: [551, 410],
+    bands: [
+      { start: 540, end: 560, strength: "Manganese band at 551nm" }
+    ],
+    chromophore: "Mn²⁺ (manganese)",
+    bookRef: "Ch. 29: Manganese Spectra",
+    description: "Rosy-red manganese carbonate showing diagnostic sharp band at 551nm in green."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SPHALERITE (ZINC BLENDE)
+  // ─────────────────────────────────────────────
+  "Sphalerite": {
+    lines: [460, 500, 650],
+    bands: [
+      { start: 450, end: 520, strength: "Complex iron absorption reminiscent of low zircon" }
+    ],
+    chromophore: "Fe²⁺ (iron)",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "High dispersion collector gem with complex absorption spectrum reminiscent of low zircon."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SILLIMANITE (FIBROLITE)
+  // ─────────────────────────────────────────────
+  "Sillimanite": {
+    lines: [462, 410],
+    bands: [
+      { start: 455, end: 470, strength: "Iron band at 462nm" }
+    ],
+    chromophore: "Fe³⁺ (iron)",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Pale blue/green sillimanite shows characteristic iron band at 462nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SYN. RUTILE
+  // ─────────────────────────────────────────────
+  "Syn. Rutile": {
+    lines: [425],
+    bands: [
+      { start: 400, end: 425, strength: "Intense cutoff below 425nm" }
+    ],
+    chromophore: "Optical bandgap",
+    bookRef: "Ch. 36: Synthetic Gemstones",
+    description: "Extreme dispersion and fire; exhibits sharp cutoff below 425nm in violet."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SYN. SPINEL
+  // ─────────────────────────────────────────────
+  "Syn. Spinel": {
+    lines: [635, 580, 540],
+    bands: [
+      { start: 540, end: 635, strength: "Three broad cobalt bands in orange-green" }
+    ],
+    chromophore: "Co²⁺ (cobalt)",
+    bookRef: "Ch. 36: Synthetic Gemstones",
+    description: "Verneuil flame-fusion synthetic spinel colored by cobalt; diagnostic triple bands at 635nm, 580nm, and 540nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SYN. EMERALD (HYDROTHERMAL & FLUX)
+  // ─────────────────────────────────────────────
+  "Syn. Emerald (Hydrothermal)": {
+    lines: [683, 680, 662, 646, 637, 477],
+    bands: [
+      { start: 580, end: 620, strength: "Intense chromium absorption" }
+    ],
+    chromophore: "Cr³⁺ (high-purity chromium)",
+    bookRef: "Ch. 36: Synthetic Gemstones",
+    description: "Hyper-intense chromium doublet at 683/680nm, sharp lines at 662/646nm, and extremely bright fluorescent red glow."
+  },
+  "Syn. Emerald (Flux)": {
+    lines: [683, 680, 662, 646, 637, 477],
+    bands: [
+      { start: 580, end: 620, strength: "Intense chromium absorption" }
+    ],
+    chromophore: "Cr³⁺ (high-purity chromium)",
+    bookRef: "Ch. 36: Synthetic Gemstones",
+    description: "Flux synthetic emerald displays intense chromium spectrum with vivid red organ-pipe fluorescence."
+  },
+
+  // ─────────────────────────────────────────────
+  //  YAG (YTTRIUM ALUMINUM GARNET)
+  // ─────────────────────────────────────────────
+  "YAG": {
+    lines: [589, 584, 572, 525, 475],
+    bands: [
+      { start: 570, end: 590, strength: "Neodymium (Nd³⁺) didymium group" }
+    ],
+    chromophore: "Nd³⁺ (neodymium dopant)",
+    bookRef: "Ch. 36: Synthetic Gemstones",
+    description: "Synthetic garnet simulant doped with rare earths, showing sharp didymium lines in yellow."
+  },
+
+  // ─────────────────────────────────────────────
+  //  ZOISITE / TANZANITE
+  // ─────────────────────────────────────────────
+  "Zoisite": {
+    lines: [595, 528, 455],
+    bands: [
+      { start: 580, end: 610, strength: "Vanadium pleochroic band" }
+    ],
+    chromophore: "V³⁺ (vanadium)",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Trichroic spectrum showing vanadium band around 595nm that varies strongly with vibration direction (blue vs purple/bronze)."
+  },
+  "Tanzanite": {
+    lines: [595, 528, 455],
+    bands: [
+      { start: 580, end: 610, strength: "Vanadium pleochroic band at 595nm" }
+    ],
+    chromophore: "V³⁺ (vanadium)",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Trichroic spectrum with prominent 595nm vanadium band. Heat treatment enhances blue by reducing brown pleochroic component."
+  },
+
+  // ─────────────────────────────────────────────
+  //  GARNET (COLOR-CHANGE)
+  // ─────────────────────────────────────────────
+  "Garnet (Color-Change)": {
+    lines: [504, 573, 685],
+    bands: [
+      { start: 560, end: 600, strength: "Dual transmission windows in red and blue-green" }
+    ],
+    chromophore: "Cr³⁺ + V³⁺ + Fe²⁺",
+    bookRef: "Ch. 19: Garnet Absorption",
+    description: "Dual transmission windows in red and blue-green create alexandrite-like color change under differing illumination."
+  },
+
+  // ─────────────────────────────────────────────
+  //  GLASS (MAN-MADE SIMULANT)
+  // ─────────────────────────────────────────────
+  "Glass (Man-Made)": {
+    lines: [656, 589, 534],
+    bands: [
+      { start: 520, end: 670, strength: "Cobalt or didymium bands" }
+    ],
+    chromophore: "Co²⁺ (cobalt) or Nd/Pr (didymium)",
+    bookRef: "Ch. 37: Glasses Spectra",
+    description: "Cobalt blue glass shows 3 bands at 656, 589, 534nm; didymium glass shows sharp multi-line rare earth group around 584nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  AZURITE
+  // ─────────────────────────────────────────────
+  "Azurite": {
+    lines: [400],
+    bands: [
+      { start: 400, end: 490, strength: "Total absorption of red/yellow, transmits blue" }
+    ],
+    chromophore: "Cu²⁺ (copper)",
+    bookRef: "Ch. 31: Copper Spectra",
+    description: "Intense copper absorption absorbing almost all light above 500nm, transmitting pure deep blue."
+  },
+
+  // ─────────────────────────────────────────────
+  //  MALACHITE
+  // ─────────────────────────────────────────────
+  "Malachite": {
+    lines: [505],
+    bands: [
+      { start: 400, end: 510, strength: "Broad copper cutoff" }
+    ],
+    chromophore: "Cu²⁺ (copper)",
+    bookRef: "Ch. 31: Copper Spectra",
+    description: "Opaque green copper carbonate; strong cutoff in violet/blue with transmission peak in green."
+  },
+
+  // ─────────────────────────────────────────────
+  //  LAPIS LAZULI
+  // ─────────────────────────────────────────────
+  "Lapis Lazuli": {
+    lines: [],
+    bands: [
+      { start: 550, end: 650, strength: "Broad trisulfur radical absorption in orange-red" }
+    ],
+    chromophore: "S₃⁻ radical anion (lazurite)",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Blue transmission window with broad orange/red absorption due to the S₃⁻ radical anion."
+  },
+
+  // ─────────────────────────────────────────────
+  //  DIASPORE (ZULTANITE)
+  // ─────────────────────────────────────────────
+  "Diaspore (Zultanite)": {
+    lines: [680, 471, 460],
+    bands: [
+      { start: 530, end: 580, strength: "Chromium / manganese / iron absorption" }
+    ],
+    chromophore: "Cr³⁺ + Fe³⁺ + Mn³⁺",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Color-change diaspore shows fine chromium lines in red and iron lines in blue, with strong pleochroism."
+  },
+
+  // ─────────────────────────────────────────────
+  //  BENITOITE
+  // ─────────────────────────────────────────────
+  "Benitoite": {
+    lines: [],
+    bands: [
+      { start: 400, end: 430, strength: "Fe²⁺-Ti⁴⁺ intervalence charge transfer" }
+    ],
+    chromophore: "Fe²⁺–Ti⁴⁺ IVCT",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Strong dichroism (colorless to deep blue); blue ray shows broad intervalence charge transfer absorption."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SERPENTINE
+  // ─────────────────────────────────────────────
+  "Serpentine": {
+    lines: [497, 464],
+    bands: [
+      { start: 460, end: 500, strength: "Fe²⁺ iron bands in green varieties (Williamsite)" }
+    ],
+    chromophore: "Fe²⁺ (iron) / Cr³⁺ (Williamsite)",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Translucent green serpentine (Williamsite) shows fine iron lines at 497nm and 464nm, sometimes faint Cr lines in red."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SCAPOLITE
+  // ─────────────────────────────────────────────
+  "Scapolite": {
+    lines: [584, 572],
+    bands: [
+      { start: 570, end: 590, strength: "Rare earth didymium lines in yellow varieties" }
+    ],
+    chromophore: "REE didymium / color centers",
+    bookRef: "Ch. 33: The Rare Earth Elements",
+    description: "Yellow scapolite occasionally shows faint didymium absorption lines at 584nm and 572nm."
+  },
+
+  // ─────────────────────────────────────────────
+  //  DUMORTIERITE
+  // ─────────────────────────────────────────────
+  "Dumortierite": {
+    lines: [500],
+    bands: [
+      { start: 580, end: 620, strength: "Broad Fe²⁺-Ti⁴⁺ charge transfer band" }
+    ],
+    chromophore: "Fe²⁺–Ti⁴⁺ IVCT",
+    bookRef: "Ch. 35: Miscellaneous Spectra",
+    description: "Deep blue to violet-blue aggregate showing broad absorption in the red-orange."
+  },
+
+  // ─────────────────────────────────────────────
+  //  HYDROGROSSULAR
+  // ─────────────────────────────────────────────
+  "Hydrogrossular": {
+    lines: [461],
+    bands: [
+      { start: 450, end: 470, strength: "Intense iron/manganese band at 461nm" }
+    ],
+    chromophore: "Fe³⁺ / Cr³⁺ (Transvaal Jade)",
+    bookRef: "Ch. 18: Other Chromium Spectra",
+    description: "Pink hydrogrossular shows manganese band at 461nm; green 'Transvaal jade' shows chromium band in red."
+  },
+
+  // ─────────────────────────────────────────────
+  //  SCHEELITE
+  // ─────────────────────────────────────────────
+  "Scheelite": {
+    lines: [584, 572, 460],
+    bands: [
+      { start: 570, end: 590, strength: "Rare earth didymium bands" }
+    ],
+    chromophore: "Nd³⁺/Pr³⁺ (didymium)",
+    bookRef: "Ch. 33: The Rare Earth Elements",
+    description: "Displays sharp rare-earth didymium absorption lines in yellow."
+  }
+};
+

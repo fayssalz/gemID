@@ -246,6 +246,15 @@ body {
     color: var(--text-primary);
 }
 
+a.btn-ghost {
+    text-decoration: none;
+}
+
+.btn-tiny {
+    padding: var(--space-xs) var(--space-md);
+    font-size: 0.75rem;
+}
+
 .match-badge {
     display: inline-flex;
     align-items: center;
@@ -946,3 +955,553 @@ body {
         transform: translateY(0) scale(1);
     }
 }
+
+/* ============================================
+   SPECTROSCOPY FILTER — Spectrum Bar & Controls
+   ============================================ */
+
+/* Collapsible spectroscopy section header */
+.spectro-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 0 6px;
+}
+.spectro-section-header .label-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.spectro-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    background: rgba(99, 102, 241, 0.18);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 600;
+    color: #a5b4fc;
+    letter-spacing: 0.03em;
+    font-family: var(--font-mono);
+}
+.spectro-badge.has-active {
+    background: rgba(99, 102, 241, 0.35);
+    border-color: rgba(129, 140, 248, 0.6);
+    color: #c7d2fe;
+}
+.spectro-chevron {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    transition: transform var(--duration-fast) var(--ease-out);
+    flex-shrink: 0;
+}
+.spectro-chevron.open {
+    transform: rotate(180deg);
+}
+
+/* Interactive spectrum bar (gradient 700nm→400nm) */
+.spectro-filter-body {
+    overflow: hidden;
+    transition: max-height var(--duration-normal) var(--ease-out),
+                opacity var(--duration-normal) ease;
+    max-height: 0;
+    opacity: 0;
+}
+.spectro-filter-body.open {
+    max-height: 500px;
+    opacity: 1;
+}
+
+.spectrum-nm-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    padding: 0 1px;
+}
+
+.spectrum-bar-interactive {
+    position: relative;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(to right,
+        #7f0000 0%,
+        #ff0000 10%,
+        #ff7f00 25%,
+        #ffff00 40%,
+        #008000 55%,
+        #0000ff 75%,
+        #4b0082 90%,
+        #2e0854 100%
+    );
+    cursor: crosshair;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow: hidden;
+    transition: box-shadow var(--duration-fast);
+}
+.spectrum-bar-interactive:hover {
+    box-shadow: 0 2px 20px rgba(129,140,248,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Cursor preview line that follows mouse — dark hairline crosshair */
+.spectrum-bar-interactive .preview-line {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #000;
+    box-shadow: 0 0 1px rgba(255,255,255,0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--duration-fast);
+    transform: translateX(-50%);
+}
+.spectrum-bar-interactive:hover .preview-line {
+    opacity: 1;
+}
+
+/* Absorption line markers (placed on the bar) — crisp dark absorption hairline */
+.spectro-line-marker {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #000;
+    box-shadow: 0 0 1px rgba(0,0,0,0.9);
+    transform: translateX(-50%);
+    cursor: pointer;
+    transition: width var(--duration-fast), box-shadow var(--duration-fast);
+    pointer-events: all;
+    z-index: 3;
+}
+.spectro-line-marker::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 5px solid rgba(255,255,255,0.85);
+    pointer-events: none;
+}
+.spectro-line-marker::before {
+    content: attr(data-nm);
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0,0,0,0.85);
+    padding: 1px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity var(--duration-fast);
+    pointer-events: none;
+}
+.spectro-line-marker:hover::before {
+    opacity: 1;
+}
+.spectro-line-marker:hover {
+    width: 3.5px;
+    box-shadow: 0 0 3px rgba(0,0,0,1);
+}
+
+/* Tolerance band shading around each marker */
+.spectro-tolerance-band {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.32);
+    border-left: 1px dashed rgba(255, 255, 255, 0.25);
+    border-right: 1px dashed rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+    transform: none;
+}
+
+/* Controls below the spectrum bar */
+.spectro-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.spectro-nm-input {
+    width: 72px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 5px 8px;
+    outline: none;
+    transition: border-color var(--duration-fast);
+}
+.spectro-nm-input:focus {
+    border-color: var(--border-active);
+}
+.spectro-add-btn {
+    padding: 5px 10px;
+    background: var(--accent-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--duration-fast), transform var(--duration-fast);
+    white-space: nowrap;
+}
+.spectro-add-btn:hover {
+    background: var(--accent-secondary);
+    transform: translateY(-1px);
+}
+.spectro-add-btn:active {
+    transform: translateY(0);
+}
+
+.spectro-tolerance-select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 5px 6px;
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.spectro-tolerance-select:focus {
+    border-color: var(--border-active);
+}
+
+/* Active bands list */
+.spectro-active-bands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+    min-height: 0;
+}
+.spectro-band-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: #fff;
+    cursor: default;
+    border: 1px solid rgba(255,255,255,0.15);
+    animation: chipIn 200ms var(--ease-spring) both;
+}
+@keyframes chipIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.spectro-band-chip .chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.25);
+    cursor: pointer;
+    font-size: 9px;
+    line-height: 1;
+    color: rgba(255,255,255,0.8);
+    transition: background var(--duration-fast);
+    flex-shrink: 0;
+    border: none;
+}
+.spectro-band-chip .chip-remove:hover {
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+}
+
+/* Match ALL / ANY toggle */
+.spectro-match-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-subtle);
+}
+.spectro-match-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.spectro-match-toggle {
+    display: flex;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    border: 1px solid var(--border-subtle);
+    gap: 2px;
+}
+.spectro-match-btn {
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: background var(--duration-fast), color var(--duration-fast);
+    background: transparent;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+}
+.spectro-match-btn.active {
+    background: var(--accent-primary);
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(129,140,248,0.4);
+}
+
+/* Preset buttons */
+.spectro-presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-top: 8px;
+}
+.spectro-preset-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast);
+    text-align: left;
+}
+.spectro-preset-btn:hover {
+    background: rgba(129,140,248,0.1);
+    border-color: rgba(129,140,248,0.3);
+    color: var(--text-primary);
+}
+.spectro-preset-btn .preset-nm {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+}
+
+/* Clear all link */
+.spectro-clear-btn {
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: var(--danger);
+    cursor: pointer;
+    padding: 0;
+    opacity: 0.7;
+    transition: opacity var(--duration-fast);
+}
+.spectro-clear-btn:hover { opacity: 1; }
+
+/* ============================================
+   MINI SPECTRUM ON GEM CARDS
+   ============================================ */
+.gem-mini-spectrum {
+    margin-top: 8px;
+    position: relative;
+    height: 18px;
+    border-radius: 4px;
+    background: linear-gradient(to right,
+        #7f0000 0%,
+        #ff0000 10%,
+        #ff7f00 25%,
+        #ffff00 40%,
+        #008000 55%,
+        #0000ff 75%,
+        #4b0082 90%,
+        #2e0854 100%
+    );
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.gem-mini-spectrum .mini-absorption {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(to right,
+        rgba(0,0,0,0) 0%,
+        rgba(0,0,0,0.62) 18%,
+        rgba(0,0,0,0.88) 50%,
+        rgba(0,0,0,0.62) 82%,
+        rgba(0,0,0,0) 100%
+    );
+    pointer-events: none;
+}
+.gem-mini-spectrum .mini-line {
+    position: absolute;
+    top: 0;
+    width: 1.5px;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    box-shadow: 0 0 1px rgba(0,0,0,0.9);
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+.gem-mini-spectrum .mini-line.mini-line-match {
+    width: 2.5px;
+    background: #000;
+    box-shadow: 0 0 2px rgba(0,0,0,1);
+    z-index: 2;
+}
+.gem-spectrum-label {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    margin-top: 3px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+.gem-spectrum-nm {
+    color: #a5b4fc;
+    font-weight: 600;
+}
+.gem-spectrum-nm.matched-nm {
+    color: #e0e7ff;
+    font-weight: 800;
+    text-shadow: 0 0 6px rgba(129, 140, 248, 0.7);
+}
+.gem-mini-spectrum.gem-spectrum-match-highlight {
+    border-color: rgba(129, 140, 248, 0.45);
+    box-shadow: 0 0 8px rgba(129, 140, 248, 0.2);
+}
+
+/* Spectroscopy section in modal */
+.modal-spectrum-container {
+    margin-bottom: 8px;
+}
+.modal-spectrum-bar {
+    position: relative;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(to right,
+        #7f0000 0%,
+        #ff0000 10%,
+        #ff7f00 25%,
+        #ffff00 40%,
+        #008000 55%,
+        #0000ff 75%,
+        #4b0082 90%,
+        #2e0854 100%
+    );
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 6px;
+}
+.modal-spectrum-bar .modal-abs-band {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(to right,
+        rgba(0,0,0,0) 0%,
+        rgba(0,0,0,0.65) 18%,
+        rgba(0,0,0,0.92) 50%,
+        rgba(0,0,0,0.65) 82%,
+        rgba(0,0,0,0) 100%
+    );
+    pointer-events: none;
+    transition: opacity var(--duration-fast);
+}
+.modal-spectrum-bar .modal-abs-line {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #000;
+    box-shadow: 0 0 1px rgba(0,0,0,0.95);
+    transform: translateX(-50%);
+    cursor: pointer;
+    transition: width var(--duration-fast), box-shadow var(--duration-fast);
+}
+.modal-spectrum-bar .modal-abs-line:hover {
+    width: 3.5px;
+    box-shadow: 0 0 3px rgba(0,0,0,1);
+}
+.modal-spectrum-nm-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.modal-spectro-lines-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+}
+.modal-spectro-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+}
+.modal-spectro-band-detail {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    line-height: 1.6;
+}
+.modal-spectro-band-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+.modal-spectro-band-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.modal-spectro-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+.modal-spectro-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.modal-spectro-meta strong {
+    color: var(--text-secondary);
+}
+

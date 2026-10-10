@@ -1,0 +1,10 @@
+# JetBrains IDE settings
+.idea/
+*.iml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Book folder with text files
+gemospect/spectroscope_and_gemmology_book/
